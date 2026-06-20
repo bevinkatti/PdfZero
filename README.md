@@ -1,4 +1,4 @@
-# PDFZero - Free Open-Source PDF Editor
+# 📄PDFZero - Free Open-Source PDF Editor 
 
 > Edit PDFs in your browser. No uploads. No task limits. No sign-up. Free.
 
