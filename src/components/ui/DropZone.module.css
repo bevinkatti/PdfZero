@@ -1,0 +1,96 @@
+.zone {
+  width: 100%;
+  max-width: 520px;
+  border: 1.5px dashed var(--brd-2);
+  border-radius: var(--r-xl);
+  background: var(--bg-panel);
+  padding: 48px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all var(--t-mid);
+  text-align: center;
+}
+
+.zone:hover, .dragging {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.icon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--r-lg);
+  background: var(--bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tx-2);
+  margin-bottom: 6px;
+  transition: all var(--t-mid);
+}
+
+.dragging .icon { color: var(--accent); background: var(--accent-bg2); }
+
+.title {
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--tx-1);
+}
+
+.sub {
+  font-size: 13px;
+  color: var(--tx-3);
+}
+
+.browse { color: var(--accent); }
+
+.note {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--tx-4);
+  background: var(--bg-card);
+  border: 1px solid var(--brd);
+  padding: 6px 12px;
+  border-radius: 99px;
+  margin-top: 4px;
+}
+
+.formats {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.formats span {
+  font-size: 11px;
+  padding: 3px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--brd);
+  border-radius: 99px;
+  color: var(--tx-3);
+}
+
+/* Compact variant (toolbar button) */
+.compact {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--r-sm);
+  background: var(--accent);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--t-fast);
+  border: none;
+  font-family: var(--font-sans);
+}
+
+.compact:hover { background: var(--accent-dim); }
+.compact.dragging { background: var(--accent-dim); }

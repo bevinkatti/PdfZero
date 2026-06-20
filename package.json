@@ -1,0 +1,35 @@
+{
+  "name": "pdfzero",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Free, open-source, browser-based PDF editor. No uploads, no limits, no BS.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .js,.jsx"
+  },
+  "dependencies": {
+    "@pdf-lib/fontkit": "^1.1.1",
+    "@pdfsmaller/pdf-encrypt": "^1.0.2",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.439.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.5.136",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-dropzone": "^14.2.3",
+    "react-hot-toast": "^2.4.1",
+    "react-router-dom": "^6.26.1",
+    "tesseract.js": "^7.0.0",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "eslint": "^9.9.1",
+    "vite": "^5.4.2"
+  }
+}

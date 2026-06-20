@@ -1,0 +1,142 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg-app);
+  overflow: hidden;
+}
+
+.workspace {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.leftPanel {
+  width: clamp(164px, 14vw, 220px);
+  flex-shrink: 0;
+  border-right: 1px solid var(--brd);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.canvas {
+  flex: 1;
+  overflow: auto;
+  background: var(--bg-canvas);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.rightPanel {
+  width: clamp(176px, 15vw, 216px);
+  flex-shrink: 0;
+  border-left: 1px solid var(--brd);
+  overflow: hidden;
+}
+
+/* Empty state */
+.emptyState {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.emptyContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 520px;
+  width: 100%;
+}
+
+.emptyTitle {
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--tx-1);
+  letter-spacing: -0.4px;
+}
+
+.emptySub {
+  font-size: 14px;
+  color: var(--tx-3);
+  text-align: center;
+}
+
+.emptyOr {
+  font-size: 12px;
+  color: var(--tx-4);
+}
+
+.demoBtn {
+  font-size: 13px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid rgba(232,69,69,0.25);
+  padding: 7px 16px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background var(--t-fast);
+  font-family: var(--font-sans);
+}
+
+.demoBtn:hover { background: var(--accent-bg2); }
+
+/* Status bar */
+.statusBar {
+  display: flex;
+  align-items: center;
+  padding: 5px 16px;
+  background: var(--bg-nav);
+  border-top: 1px solid var(--brd);
+  font-size: 11px;
+  color: var(--tx-3);
+  flex-shrink: 0;
+  gap: 16px;
+}
+
+.statusFile { display: flex; align-items: center; gap: 5px; }
+
+.statusCenter { margin: 0 auto; font-family: var(--font-mono); color: var(--tx-4); }
+
+.statusRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--green);
+}
+
+.privacyDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.loadingCanvas {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--tx-3);
+  font-size: 13px;
+  background: var(--bg-canvas);
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.loadingSpinner {
+  width: 32px;
+  height: 32px;
+  border: 2.5px solid rgba(232,69,69,0.15);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}

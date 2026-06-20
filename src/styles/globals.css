@@ -1,0 +1,131 @@
+/* PDFZero — Design System */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'DM Mono', monospace;
+
+  /* Core palette — dark ink theme */
+  --ink-950: #0d0d0f;
+  --ink-900: #161618;
+  --ink-800: #1e1e22;
+  --ink-700: #2a2a2f;
+  --ink-600: #38383f;
+  --ink-500: #52525c;
+  --ink-400: #70707d;
+  --ink-300: #a0a0ac;
+  --ink-200: #c8c8d0;
+  --ink-100: #e8e8ec;
+  --ink-50:  #f5f5f7;
+  --ink-0:   #ffffff;
+
+  /* Accent — electric vermillion */
+  --accent:     #e84545;
+  --accent-dim: #c93a3a;
+  --accent-bg:  rgba(232, 69, 69, 0.08);
+  --accent-bg2: rgba(232, 69, 69, 0.15);
+
+  /* Blue for info/selection */
+  --blue:    #3b82f6;
+  --blue-bg: rgba(59, 130, 246, 0.08);
+  --blue-dim:#2563eb;
+
+  /* Green for success */
+  --green:    #10b981;
+  --green-bg: rgba(16, 185, 129, 0.08);
+
+  /* Amber for warning */
+  --amber:    #f59e0b;
+  --amber-bg: rgba(245, 158, 11, 0.1);
+
+  /* Surfaces */
+  --bg-app:    var(--ink-950);
+  --bg-nav:    var(--ink-900);
+  --bg-panel:  var(--ink-800);
+  --bg-card:   var(--ink-700);
+  --bg-hover:  var(--ink-600);
+  --bg-canvas: #1a1a20;
+
+  /* Borders */
+  --brd:   rgba(255,255,255,0.07);
+  --brd-2: rgba(255,255,255,0.12);
+  --brd-3: rgba(255,255,255,0.18);
+
+  /* Text */
+  --tx-1: #f0f0f4;
+  --tx-2: #a0a0ac;
+  --tx-3: #60606c;
+  --tx-4: #404048;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.5);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
+
+  /* Radius */
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+
+  /* Transitions */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --t-fast: 120ms;
+  --t-mid:  200ms;
+  --t-slow: 350ms;
+}
+
+html, body, #root {
+  height: 100%;
+  background: var(--bg-app);
+  color: var(--tx-1);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--ink-600); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-500); }
+
+/* Selection */
+::selection { background: rgba(232, 69, 69, 0.3); color: var(--tx-1); }
+
+/* Buttons reset */
+button { font-family: var(--font-sans); cursor: pointer; border: none; background: none; }
+
+/* Focus */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-sm); }
+
+/* Animations */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-in { animation: fadeIn var(--t-slow) var(--ease) both; }
+.animate-up { animation: slideUp var(--t-slow) var(--ease) both; }
+
+/* Utility classes */
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+
+/* Skeleton loader */
+.skeleton {
+  background: linear-gradient(90deg, var(--ink-700) 25%, var(--ink-600) 50%, var(--ink-700) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--r-sm);
+}
