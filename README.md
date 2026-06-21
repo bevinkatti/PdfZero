@@ -1,4 +1,4 @@
-# 📄PDFZero - Free Open-Source PDF Editor 
+# 📄PDFZero - Free Open-Source PDF Editor. 
 
 > Edit PDFs in your browser. No uploads. No task limits. No sign-up. Free.
 
@@ -158,4 +158,4 @@ npm run dev
 MIT Copyright PDFZero contributors 
   
   ---  
-If you find PDFZero useful, consider giving it a ⭐ on GitHub.
+If you find PDFZero useful, consider giving a ⭐.
