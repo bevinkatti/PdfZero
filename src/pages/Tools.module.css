@@ -720,8 +720,25 @@
 }
 
 @media (max-width: 720px) {
+  /* The sidebar tool-list duplicates the card grid shown when no tool is
+     selected, and has no room next to .content on a phone screen. Hide it
+     entirely on mobile — card grid (with full-width back button) replaces
+     its navigation role. */
+  .sidebar { display: none; }
+
   .toolGrid {
     padding: 24px;
+  }
+
+  .toolGridTitle { font-size: 22px; }
+
+  .cards {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  .backBtn {
+    margin: 12px 16px 0;
   }
 
   .toolUI,

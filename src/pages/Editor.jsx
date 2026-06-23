@@ -1,7 +1,8 @@
 import React, { useEffect, useCallback, useState } from 'react'
+import { X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { usePdfStore } from '../store/pdfStore.js'
-import { loadPdf } from '../lib/pdfRenderer.js'
+import { loadPdf, getPageBaseSize } from '../lib/pdfRenderer.js'
 import Navbar from '../components/layout/Navbar.jsx'
 import EditorToolbar from '../components/editor/EditorToolbar.jsx'
 import PageThumbnails from '../components/editor/PageThumbnails.jsx'
@@ -11,7 +12,12 @@ import DropZone from '../components/ui/DropZone.jsx'
 import styles from './Editor.module.css'
 
 export default function Editor() {
-  const { file, setPageCount, fileName, zoom, currentPage, setCurrentPage, pageCount } = usePdfStore()
+  const {
+    file, setPageCount, fileName, zoom, currentPage, setCurrentPage, pageCount,
+    mobilePagesOpen, mobilePropertiesOpen,
+    setMobilePagesOpen, closeMobilePanels,
+    setZoom,
+  } = usePdfStore()
   // pdfReady gates PdfCanvas — only render after loadPdf() fully resolves
   const [pdfReady, setPdfReady] = useState(false)
 
@@ -20,9 +26,24 @@ export default function Editor() {
     setPdfReady(false)  // reset so PdfCanvas remounts cleanly
 
     loadPdf(file)
-      .then((doc) => {
+      .then(async (doc) => {
         setPageCount(doc.numPages)
-        // Small rAF delay so React can flush the pageCount state
+
+        // On narrow screens, the default 100% zoom renders pages wider than
+        // the viewport, forcing horizontal scroll just to read a line of text.
+        // Auto-fit zoom to the available canvas width before the first paint
+        // so mobile users land on a comfortably-readable view immediately.
+        if (window.innerWidth <= 768) {
+          try {
+            const { width } = await getPageBaseSize(1)
+            // .canvas has ~32px total horizontal padding (see Editor.module.css .wrapper)
+            const available = window.innerWidth - 40
+            const fitZoom = available / width
+            setZoom(fitZoom)
+          } catch (_) { /* fall back to default zoom if measurement fails */ }
+        }
+
+        // Small rAF delay so React can flush the pageCount/zoom state
         // before PdfCanvas triggers its first renderPage()
         requestAnimationFrame(() => {
           requestAnimationFrame(() => setPdfReady(true))
@@ -58,7 +79,20 @@ export default function Editor() {
       <div className={styles.workspace}>
         {file ? (
           <>
-            <aside className={styles.leftPanel}>
+            {/* Backdrop — tapping it closes whichever mobile drawer is open */}
+            <div
+              className={`${styles.backdrop} ${(mobilePagesOpen || mobilePropertiesOpen) ? styles.backdropShow : ''}`}
+              onClick={closeMobilePanels}
+            />
+
+            <aside className={`${styles.leftPanel} ${mobilePagesOpen ? styles.mobileOpen : ''}`}>
+              <button
+                className={styles.drawerClose}
+                onClick={closeMobilePanels}
+                aria-label="Close pages panel"
+              >
+                <X size={16} />
+              </button>
               <PageThumbnails />
             </aside>
 
@@ -73,7 +107,14 @@ export default function Editor() {
               )}
             </main>
 
-            <aside className={styles.rightPanel}>
+            <aside className={`${styles.rightPanel} ${mobilePropertiesOpen ? styles.mobileOpen : ''}`}>
+              <button
+                className={styles.drawerClose}
+                onClick={closeMobilePanels}
+                aria-label="Close properties panel"
+              >
+                <X size={16} />
+              </button>
               <PropertiesPanel />
             </aside>
           </>
@@ -96,7 +137,7 @@ export default function Editor() {
           <span className={styles.statusCenter}>Page {currentPage} of {pageCount}</span>
           <span className={styles.statusRight}>
             <span className={styles.privacyDot} />
-            Processed locally — never uploaded
+            <span className={styles.statusRightText}>Processed locally — never uploaded</span>
           </span>
         </div>
       )}

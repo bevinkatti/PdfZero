@@ -154,4 +154,20 @@
 @media (max-width: 768px) {
   .privacyBadge { display: none; }
   .logoBeta { display: none; }
+  /* Hero already has its own "Start editing free" CTA — hide the navbar
+     duplicate on mobile so it doesn't overflow/wrap into the cramped nav row */
+  .ctaBtn { display: none; }
+  /* Shrink GitHub button to icon + star badge only — drop the "GitHub" label */
+  .githubBtn span:first-of-type { display: none; }
+  .githubBtn { padding: 6px 8px; }
+  .nav { padding: 0 12px; gap: 6px; }
+  .left { gap: 10px; min-width: 0; }
+  .logoName { font-size: 14px; }
+  .tabs { gap: 0; }
+  .tab { padding: 5px 8px; font-size: 12px; white-space: nowrap; }
+}
+
+@media (max-width: 420px) {
+  /* On very narrow phones, drop the GitHub text entirely, icon-only */
+  .starCount { display: none; }
 }

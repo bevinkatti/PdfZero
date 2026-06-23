@@ -348,6 +348,9 @@ export default function TextBlock({
 }
 
 // ── Context toolbar (sibling of TextBlock, not inside contentEditable) ────────
+// Button sizing follows Apple/Google's ~40px minimum touch-target guidance —
+// the previous 26px-tall buttons with 12px icons were comfortable with a
+// mouse cursor but too small to tap reliably with a finger.
 export function TextContextToolbar({ block, pageNum, pos, onEdit }) {
   const { removeTextBlock, updateTextBlock, setSelectedElement } = usePdfStore()
 
@@ -356,14 +359,14 @@ export function TextContextToolbar({ block, pageNum, pos, onEdit }) {
       style={{
         position: 'absolute',
         left: pos.x,
-        top: Math.max(2, pos.y - 40),
+        top: Math.max(2, pos.y - 50),
         display: 'flex',
         alignItems: 'center',
-        gap: 1,
+        gap: 2,
         background: '#18181b',
         border: '1px solid rgba(255,255,255,0.15)',
-        borderRadius: 8,
-        padding: '3px 5px',
+        borderRadius: 10,
+        padding: '5px 6px',
         zIndex: 40,
         boxShadow: '0 4px 24px rgba(0,0,0,0.6)',
         pointerEvents: 'all',
@@ -377,16 +380,16 @@ export function TextContextToolbar({ block, pageNum, pos, onEdit }) {
         { label: '✏️ Edit', action: () => onEdit(), },
         { label: null }, // separator
         {
-          icon: <Copy size={12} />, title: 'Duplicate', action: () => {
+          icon: <Copy size={16} />, title: 'Duplicate', action: () => {
             const clone = { ...block, id: `new-${Date.now()}`, x: pos.x + 14, y: pos.y + 14, isExtracted: false, isEdited: false, originalId: undefined }
             updateTextBlock(pageNum, clone.id, clone)
             toast.success('Duplicated')
           }
         },
-        { icon: <Wand2 size={12} />, title: 'AI font match', action: () => toast('AI font match — v1.1', { icon: '✨' }) },
+        { icon: <Wand2 size={16} />, title: 'AI font match', action: () => toast('AI font match — v1.1', { icon: '✨' }) },
         { label: null }, // separator
         {
-          icon: <Trash2 size={12} />, title: 'Delete', danger: true, action: () => {
+          icon: <Trash2 size={16} />, title: 'Delete', danger: true, action: () => {
             removeTextBlock(pageNum, block.id)
             setSelectedElement(null, null)
             toast.success('Removed')
@@ -394,16 +397,16 @@ export function TextContextToolbar({ block, pageNum, pos, onEdit }) {
         },
       ].map((item, i) => {
         if (item.label === null) return (
-          <div key={i} style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.1)', margin: '0 2px' }} />
+          <div key={i} style={{ width: 1, height: 22, background: 'rgba(255,255,255,0.1)', margin: '0 3px' }} />
         )
         return (
           <button key={i} title={item.title} onMouseDown={e => { e.preventDefault(); e.stopPropagation(); item.action() }}
             style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-              minWidth: 28, height: 26, padding: '0 7px',
-              border: 'none', borderRadius: 5, background: 'transparent',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+              minWidth: 40, height: 40, padding: '0 12px',
+              border: 'none', borderRadius: 7, background: 'transparent',
               color: item.danger ? '#f87171' : '#a1a1aa',
-              fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-sans)',
+              fontSize: 14, cursor: 'pointer', fontFamily: 'var(--font-sans)',
             }}
           >
             {item.label || item.icon}

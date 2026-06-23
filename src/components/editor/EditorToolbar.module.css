@@ -162,3 +162,22 @@
   opacity: 0.35;
   cursor: not-allowed;
 }
+
+/* ── Mobile / desktop visibility toggles ──
+   .mobileOnly  → hidden by default, shown ≤768px (drawer toggle buttons)
+   .desktopOnly → visible by default, hidden ≤768px (inline format controls,
+                  superseded by the Properties drawer on mobile)             */
+.mobileOnly { display: none; }
+
+@media (max-width: 768px) {
+  .mobileOnly  { display: flex; }
+  .desktopOnly { display: none; }
+
+  .toolbar { padding: 6px 8px; gap: 3px; }
+
+  /* Bigger touch targets on mobile — 30px is borderline too small to tap reliably */
+  .toolBtn { width: 36px; height: 34px; }
+  .aiBtn { padding: 7px 10px; font-size: 13px; }
+  .exportBtn { padding: 8px 12px; font-size: 13px; white-space: nowrap; }
+  .zoomLabel { min-width: 34px; font-size: 11px; }
+}

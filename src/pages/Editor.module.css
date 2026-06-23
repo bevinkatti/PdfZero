@@ -10,6 +10,7 @@
   display: flex;
   flex: 1;
   overflow: hidden;
+  position: relative; /* anchors the mobile drawer/backdrop absolute children */
 }
 
 .leftPanel {
@@ -139,4 +140,90 @@
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+}
+
+/* ── Backdrop — only ever visible on mobile, behind the open drawer ── */
+.backdrop {
+  display: none;
+}
+
+.drawerClose {
+  display: none;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   MOBILE LAYOUT (≤768px)
+   The 3-column desktop layout (pages | canvas | properties) does not
+   fit a phone screen. Below this breakpoint, the side panels become
+   slide-in overlays anchored to .workspace (position:relative above),
+   triggered by buttons in the toolbar. Canvas always takes full width.
+   ════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .leftPanel,
+  .rightPanel {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: min(82vw, 300px);
+    z-index: 60;
+    background: var(--bg-panel);
+    transition: transform 220ms ease;
+    box-shadow: 0 0 32px rgba(0,0,0,0.5);
+  }
+
+  .leftPanel {
+    left: 0;
+    border-right: 1px solid var(--brd);
+    transform: translateX(-100%);
+  }
+  .leftPanel.mobileOpen { transform: translateX(0); }
+
+  .rightPanel {
+    right: 0;
+    border-left: 1px solid var(--brd);
+    transform: translateX(100%);
+  }
+  .rightPanel.mobileOpen { transform: translateX(0); }
+
+  .backdrop {
+    display: block;
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 55;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+  }
+  .backdropShow {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .drawerClose {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--r-sm);
+    background: var(--bg-card);
+    border: 1px solid var(--brd-2);
+    color: var(--tx-2);
+    z-index: 65;
+    cursor: pointer;
+  }
+
+  .canvas { width: 100%; }
+
+  .emptyState { padding: 20px; }
+  .emptyTitle { font-size: 18px; text-align: center; }
+
+  /* Status bar: hide the long privacy sentence, keep just the dot + page count */
+  .statusRightText { display: none; }
+  .statusBar { padding: 5px 10px; gap: 8px; font-size: 10px; }
+  .statusFile { max-width: 40vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }

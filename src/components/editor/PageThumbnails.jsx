@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Plus, Trash2, RotateCcw, Copy } from 'lucide-react'
+import { Plus, Trash2, RotateCcw, Copy, MoreVertical } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { usePdfStore } from '../../store/pdfStore.js'
 import { renderThumbnail } from '../../lib/pdfRenderer.js'
@@ -85,6 +85,14 @@ export default function PageThumbnails() {
               : <div className={`skeleton ${styles.thumbSkeleton}`} />
             }
             <span className={styles.pageNum}>{num}</span>
+            {/* Tap target for touch devices — right-click doesn't exist on mobile */}
+            <button
+              className={styles.kebabBtn}
+              onClick={(e) => { e.stopPropagation(); setContextMenu({ x: e.clientX, y: e.clientY, pageNum: num }) }}
+              aria-label={`Page ${num} options`}
+            >
+              <MoreVertical size={13} />
+            </button>
           </div>
         ))}
       </div>
@@ -97,7 +105,10 @@ export default function PageThumbnails() {
       {contextMenu && (
         <div
           className={styles.ctxMenu}
-          style={{ top: contextMenu.y - 60, left: contextMenu.x - 180 }}
+          style={{
+            top: Math.max(8, contextMenu.y - 60),
+            left: Math.min(Math.max(8, contextMenu.x - 180), window.innerWidth - 188),
+          }}
           onClick={(e) => e.stopPropagation()}
         >
           <button onClick={handleRotate}><RotateCcw size={13} /> Rotate 90°</button>

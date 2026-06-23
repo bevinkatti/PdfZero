@@ -56,6 +56,24 @@
 
 .thumb:hover { border-color: var(--brd-3); }
 
+.kebabBtn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 5px;
+  background: rgba(0,0,0,0.55);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+}
+.kebabBtn:hover { background: rgba(0,0,0,0.75); }
+
 .thumb.active {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-bg2);

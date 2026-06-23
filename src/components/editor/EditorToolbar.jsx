@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react'
 import {
   MousePointer2, Type, Image, Pencil, Square, PenLine,
   Highlighter, EyeOff, Undo2, Redo2, ZoomIn, ZoomOut,
-  Download, Scan, Sparkles, Loader2, Bold, Italic, Underline
+  Download, Scan, Sparkles, Loader2, Bold, Italic, Underline,
+  PanelLeft, SlidersHorizontal
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { usePdfStore } from '../../store/pdfStore.js'
@@ -37,6 +38,8 @@ export default function EditorToolbar() {
     selectedElement, selectedElementPage,
     updateTextBlock, commitExtractedEdit,
     undoEdit, redoEdit,
+    mobilePagesOpen, mobilePropertiesOpen,
+    setMobilePagesOpen, setMobilePropertiesOpen,
   } = usePdfStore()
 
   const [ocrRunning,   setOcrRunning]   = useState(false)
@@ -171,6 +174,15 @@ export default function EditorToolbar() {
 
   return (
     <div className={styles.toolbar}>
+      {/* Mobile-only: toggle the Pages drawer (hidden on desktop, panel is always visible there) */}
+      <button
+        className={`${styles.toolBtn} ${styles.mobileOnly} ${mobilePagesOpen ? styles.active : ''}`}
+        onClick={() => setMobilePagesOpen(!mobilePagesOpen)}
+        title="Pages" aria-label="Toggle pages panel"
+      >
+        <PanelLeft size={16} />
+      </button>
+
       <DropZone compact />
       <div className={styles.sep} />
 
@@ -186,11 +198,11 @@ export default function EditorToolbar() {
         ))}
       </div>
 
-      <div className={styles.sep} />
+      <div className={`${styles.sep} ${styles.desktopOnly}`} />
 
-      {/* Font family */}
+      {/* Font family — hidden on mobile; use the Properties drawer instead (less crowding) */}
       <select
-        className={styles.select}
+        className={`${styles.select} ${styles.desktopOnly}`}
         value={fontFamily}
         onChange={e => handleFontFamily(e.target.value)}
         disabled={!hasSelection}
@@ -203,7 +215,7 @@ export default function EditorToolbar() {
       {/* Font size */}
       <input
         type="number"
-        className={styles.numInput}
+        className={`${styles.numInput} ${styles.desktopOnly}`}
         value={fontSize}
         min={4} max={200}
         disabled={!hasSelection}
@@ -214,7 +226,7 @@ export default function EditorToolbar() {
 
       {/* Bold */}
       <button
-        className={`${styles.fmtBtn} ${bold ? styles.fmtActive : ''}`}
+        className={`${styles.fmtBtn} ${styles.desktopOnly} ${bold ? styles.fmtActive : ''}`}
         onClick={handleBold}
         disabled={!hasSelection}
         title="Bold (affects export)"
@@ -226,7 +238,7 @@ export default function EditorToolbar() {
 
       {/* Italic */}
       <button
-        className={`${styles.fmtBtn} ${italic ? styles.fmtActive : ''}`}
+        className={`${styles.fmtBtn} ${styles.desktopOnly} ${italic ? styles.fmtActive : ''}`}
         onClick={handleItalic}
         disabled={!hasSelection}
         title="Italic (affects export)"
@@ -238,7 +250,7 @@ export default function EditorToolbar() {
 
       {/* Underline — CSS only, marks in store */}
       <button
-        className={`${styles.fmtBtn} ${underline ? styles.fmtActive : ''}`}
+        className={`${styles.fmtBtn} ${styles.desktopOnly} ${underline ? styles.fmtActive : ''}`}
         onClick={handleUnderline}
         disabled={!hasSelection}
         title="Underline"
@@ -248,12 +260,12 @@ export default function EditorToolbar() {
         <Underline size={14} />
       </button>
 
-      <div className={styles.sep} />
+      <div className={`${styles.sep} ${styles.desktopOnly}`} />
 
       {/* Color */}
       <input
         type="color"
-        className={styles.colorPicker}
+        className={`${styles.colorPicker} ${styles.desktopOnly}`}
         value={color}
         disabled={!hasSelection}
         onChange={e => handleColor(e.target.value)}
@@ -294,6 +306,17 @@ export default function EditorToolbar() {
       </button>
 
       <div className={styles.sep} />
+
+      <div className={styles.sep} />
+
+      {/* Mobile-only: toggle the Properties drawer */}
+      <button
+        className={`${styles.toolBtn} ${styles.mobileOnly} ${mobilePropertiesOpen ? styles.active : ''}`}
+        onClick={() => setMobilePropertiesOpen(!mobilePropertiesOpen)}
+        title="Properties" aria-label="Toggle properties panel"
+      >
+        <SlidersHorizontal size={16} />
+      </button>
 
       <button className={styles.exportBtn} onClick={handleExport} disabled={!file}>
         <Download size={14} /> Download PDF

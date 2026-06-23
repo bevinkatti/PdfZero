@@ -37,13 +37,26 @@ export default function PdfCanvas() {
     renderPage(currentPage, zoom)
       .then(({ canvas, width, height }) => {
         if (id !== renderIdRef.current) return
-        setBaseSize({ width: width / zoom, height: height / zoom })
+        // baseW/baseH are the BASE_SCALE (zoom-independent) page dimensions —
+        // same value used for .pageContainer's un-transformed width/height.
+        const baseW = width  / zoom
+        const baseH = height / zoom
+        setBaseSize({ width: baseW, height: baseH })
+
         const el = canvasRef.current
         if (!el) return
+        // Bitmap stays high-res (BASE_SCALE * zoom * dpr) for crisp rendering —
+        // but CSS display size must equal baseW/baseH, NOT width/height.
+        // .pageContainer (canvas's parent) applies `transform: scale(zoom)`
+        // already. Sizing the canvas itself at the zoom-multiplied `width`/
+        // `height` here would scale it down TWICE (once via its own smaller
+        // CSS size, once via the ancestor's transform) — at zoom=1 the two
+        // bugs cancel out and it looks fine, which is why this only became
+        // visible once non-100% zoom (mobile auto-fit) was introduced.
         el.width  = canvas.width
         el.height = canvas.height
-        el.style.width  = width  + 'px'
-        el.style.height = height + 'px'
+        el.style.width  = baseW + 'px'
+        el.style.height = baseH + 'px'
         el.getContext('2d').drawImage(canvas, 0, 0)
         setPageBg(detectPageBackground(canvas))
         setIsRendering(false)
@@ -217,23 +230,29 @@ export default function PdfCanvas() {
             />
           ))}
 
-          {/* Context toolbar — rendered OUTSIDE contentEditable */}
-          {selectedBlock && !isEditing && (
-            <TextContextToolbar
-              block={selectedBlock}
-              pageNum={currentPage}
-              pos={{ x: selectedBlock.x, y: selectedBlock.y }}
-              onEdit={() => setEditingId(selectedBlock.id)}
-              onClose={() => setSelectedElement(null, null)}
-            />
-          )}
-
           <AnnotationLayer
             pageNum={currentPage}
             pageSize={baseSize}
             activeTool={activeTool}
           />
         </div>
+
+        {/* Context toolbar — deliberately rendered OUTSIDE the transform:scale(zoom)
+            container above. Buttons need a fixed, comfortable touch-target size
+            on screen at every zoom level; if rendered inside the scaled container,
+            a 40px button at 38% zoom would only occupy ~15px on screen (this was
+            the actual bug — the toolbar WAS sized correctly in source, it just got
+            visually shrunk by the same transform that zooms the page). Position is
+            converted to scaled (on-screen) coordinates manually instead. */}
+        {selectedBlock && !isEditing && (
+          <TextContextToolbar
+            block={selectedBlock}
+            pageNum={currentPage}
+            pos={{ x: selectedBlock.x * zoom, y: selectedBlock.y * zoom }}
+            onEdit={() => setEditingId(selectedBlock.id)}
+            onClose={() => setSelectedElement(null, null)}
+          />
+        )}
       </div>
     </div>
   )

@@ -33,13 +33,28 @@ export const usePdfStore = create((set, get) => ({
   pageBgs: {},
   activeTool: "select",
 
+  // Mobile drawer visibility — Pages (left) and Properties (right) panels
+  // become slide-in overlays below a 768px breakpoint. Only one open at a time.
+  mobilePagesOpen: false,
+  mobilePropertiesOpen: false,
+
   setFile:           (file, fileName, fileSize) => set({ file, fileName, fileSize }),
   setPageCount:      (pageCount)   => set({ pageCount }),
   setCurrentPage:    (p)           => set({ currentPage: p, selectedElement: null, selectedElementPage: null }),
-  setZoom:           (z)           => set({ zoom: Math.max(0.4, Math.min(3.0, Math.round(z * 10) / 10)) }),
+  setZoom:           (z)           => set({ zoom: Math.max(0.25, Math.min(3.0, Math.round(z * 100) / 100)) }),
   setActiveTool:     (t)           => set({ activeTool: t, selectedElement: null, selectedElementPage: null }),
   setPageBg: (pageNum, bg) => set(s => ({ pageBgs: { ...s.pageBgs, [pageNum]: bg } })),
   setSelectedElement:(el, page)    => set({ selectedElement: el, selectedElementPage: page }),
+
+  setMobilePagesOpen: (open) => set({
+    mobilePagesOpen: open,
+    mobilePropertiesOpen: open ? false : get().mobilePropertiesOpen,
+  }),
+  setMobilePropertiesOpen: (open) => set({
+    mobilePropertiesOpen: open,
+    mobilePagesOpen: open ? false : get().mobilePagesOpen,
+  }),
+  closeMobilePanels: () => set({ mobilePagesOpen: false, mobilePropertiesOpen: false }),
 
   getLayer: (pageNum) => {
     const { editLayers } = get()
@@ -227,6 +242,7 @@ export const usePdfStore = create((set, get) => ({
     zoom: 1.0, editLayers: {}, extractedEdits: {}, selectedElement: null,
     selectedElementPage: null, activeTool: "select", pageBgs: {},
     historyPast: [], historyFuture: [],
+    mobilePagesOpen: false, mobilePropertiesOpen: false,
   }),
 }))
 
