@@ -18,7 +18,16 @@
 Many PDF tools charge monthly, cap file sizes, or limit what you can do on free plans. PDFZero keeps the core workflow simple: edit locally, keep your files on-device, and use the important tools without a paywall.  
 
 ## Demo  
-![demo](public/demos/demo.gif)
+![demo](public/demos/demo.gif)  
+  
+## 🌐 Try PDFZero Live
+
+🔗 **https://pdfzero-editor.vercel.app**  
+Edit, organize, secure, and optimize PDFs directly in your browser - all FREE while keeping your files on your device.  
+  
+
+---  
+---
 
 | Feature | Other PDF tools | **PDFZero** |
 |---|---|---|
