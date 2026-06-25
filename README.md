@@ -1,4 +1,4 @@
-![cover](public/demos/cover.PNG)
+![cover](public/demos/cover.png)
 
 # 📄PDFZero - Free Open-Source PDF Editor. 
 
