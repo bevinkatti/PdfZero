@@ -1,3 +1,5 @@
+![cover](public/demos/cover.PNG)
+
 # 📄PDFZero - Free Open-Source PDF Editor. 
 
 > Edit PDFs in your browser. No uploads. No task limits. No sign-up. Free.
@@ -11,7 +13,7 @@
 [![pdf-lib](https://img.shields.io/badge/pdf--lib-core-red)]()
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-pink.svg)]()
 
----
+---  
 
 ## Why PDFZero?
 
