@@ -31,3 +31,4 @@ Thumbs.db
 
 # Demo files - explicitly included for GitHub
 !public/demos/
+!public/demos/cover.png
