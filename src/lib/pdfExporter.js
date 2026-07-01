@@ -2,6 +2,7 @@ import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib'
 import * as pdfjsLib from 'pdfjs-dist'
 import { encryptPDF } from '@pdfsmaller/pdf-encrypt'
 import { BASE_SCALE, classifyFont } from './pdfRenderer.js'
+import { layoutTextForBlock, splitTextLines, textChars } from './pdfTextLayout.js'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc ||= new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -20,8 +21,9 @@ function hexToRgb(hex) {
 }
 
 // ─── Font picker ──────────────────────────────────────────────────────────
-// pdf-lib only has 14 standard fonts. We map every font to the closest one,
-// preserving bold/italic. This is the same mapping Sejda uses internally.
+// pdf-lib's built-in path only has the 14 standard fonts. This is a browser
+// fallback, not high-fidelity font preservation; the advanced engine should
+// reuse embedded fonts or embed measured substitutes whenever possible.
 function pickStdFont(block) {
   // Prefer pre-classified info if present
   const info   = classifyFont(block.fontName || block.stdFont || '')
@@ -65,25 +67,45 @@ function canvasToPdf(cx, cy, cFontSize, pageH, cBaselineOffset) {
   return { x, y, size }
 }
 
-function getCharacterSpacing(block, safe, font, size) {
-  if (!block.isEdited || !block.originalWidth || safe.length < 2) return undefined
-  const targetWidth = block.originalWidth / BASE_SCALE
-  const naturalWidth = font.widthOfTextAtSize(safe, size)
-  const spacing = (targetWidth - naturalWidth) / (safe.length - 1)
-  if (!Number.isFinite(spacing) || Math.abs(spacing) > size * 0.35) return undefined
-  return spacing
-}
+function drawLineWithSpacing(page, text, options, spacing = 0) {
+  const chars = textChars(text)
+  if (!chars.length) return
 
-function drawTextWithSpacing(page, text, options, spacing) {
-  if (spacing === undefined) {
+  if (!spacing) {
     page.drawText(text, options)
     return
   }
 
   let cursorX = options.x
-  for (const ch of text) {
+  for (const ch of chars) {
     if (ch !== ' ') page.drawText(ch, { ...options, x: cursorX })
     cursorX += options.font.widthOfTextAtSize(ch, options.size) + spacing
+  }
+}
+
+function drawFittedText(page, text, options, block) {
+  const preserveWidth = Boolean(block.isEdited && block.originalWidth)
+  const explicitLines = splitTextLines(text)
+  const layout = layoutTextForBlock({
+    block,
+    text,
+    font: options.font,
+    size: options.size,
+    baseScale: BASE_SCALE,
+    preserveWidth,
+  })
+
+  layout.lines.forEach((line, index) => {
+    const y = options.y - index * layout.lineHeight
+    const lineOptions = { ...options, y, size: line.size }
+    if (!explicitLines[index]?.length) return
+    drawLineWithSpacing(page, line.text, lineOptions, line.characterSpacing)
+  })
+
+  return {
+    status: layout.status,
+    overflow: layout.overflow,
+    lineCount: layout.lines.length,
   }
 }
 
@@ -254,6 +276,8 @@ function buildWatermarkPlacements(pageWidth, pageHeight, markWidth, markHeight, 
 function sanitize(str) {
   return [...(str || '')]
     .map(ch => {
+      if (ch === '\n') return '\n'
+      if (ch === '\t') return ' '
       const code = ch.charCodeAt(0)
       if (code >= 32 && code <= 255) return ch
       // Common unicode → latin substitutions
@@ -306,21 +330,20 @@ export async function exportPdf(originalArrayBuffer, editLayers, pageCount, page
       const font  = await getFont(block)
       const color = hexToRgb(block.color || '#000000')
       const { x, y, size } = canvasToPdf(block.x, block.y, block.fontSize, pageH, block.baselineOffset)
-      const characterSpacing = getCharacterSpacing(block, safe, font, size)
       const drawOptions = { x, y, size, font, color }
 
       // Skip items that landed off-page (clip with small margin)
       if (x < -20 || x > pageW + 20 || y < -20 || y > pageH + 20) continue
 
       try {
-        drawTextWithSpacing(page, safe, drawOptions, characterSpacing)
+        drawFittedText(page, safe, drawOptions, block)
       } catch {
         // Last resort: plain Helvetica
         try {
           const hf = fontCache[StandardFonts.Helvetica]
             || (fontCache[StandardFonts.Helvetica] = await pdfDoc.embedFont(StandardFonts.Helvetica))
           const fallbackOptions = { ...drawOptions, font: hf }
-          drawTextWithSpacing(page, safe, fallbackOptions, getCharacterSpacing(block, safe, hf, size))
+          drawFittedText(page, safe, fallbackOptions, block)
         } catch (_) { /* skip truly un-renderable blocks */ }
       }
     }

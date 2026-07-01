@@ -5,7 +5,9 @@ import { usePdfStore } from '../../store/pdfStore.js'
 import styles from './TextBlock.module.css'
 
 // ══════════════════════════════════════════════════════════════════════════════
-// THE SEJDA MODEL — exactly how professional PDF text editing works
+// Browser overlay model: a pragmatic approximation of professional PDF editing.
+// True Sejda/Acrobat-style editing also needs PDF object surgery, font reuse,
+// glyph metrics, and render-diff repair during export.
 //
 // Layer stack (bottom → top):
 //   1. <canvas>        — PDF raster, always visible
@@ -21,7 +23,7 @@ import styles from './TextBlock.module.css'
 //   pageBg is sampled from page corners — it's a single flat color.
 //   localBg is sampled from the canvas at the exact position of THIS text
 //   block. This matches watermarks, seals, gradients, colored regions.
-//   Result: edited text blends perfectly like in Sejda — no patchy white.
+//   Result: edited text blends much better on non-white backgrounds.
 //
 // WHY opacity:0 not color:transparent:
 //   color:transparent makes text invisible but keeps the div fully in layout.
@@ -199,6 +201,22 @@ export default function TextBlock({
     return pageBg || 'white'
   }, [getLocalBg, pos.x, pos.y, block.width, block.height, fontSize, draftText.length, pageBg])
 
+  const fitOverflow = useMemo(() => {
+    const maxWidth = block.maxEditWidth || block.originalWidth || block.width
+    if (!maxWidth || (!block.isEdited && !isExtracted)) return false
+    const lines = String(draftText || '').replace(/\r/g, '').split('\n')
+    const avgAdvance = block.averageAdvance || (block.originalStr?.length ? maxWidth / block.originalStr.length : fontSize * 0.55)
+    const estimatedWidth = Math.max(...lines.map(line => line.length * avgAdvance), 0)
+    const lineHeight = block.lineHeight || block.height || fontSize * 1.1
+    const maxHeight = block.maxEditHeight || block.originalHeight || block.height || lineHeight
+    const estimatedHeight = Math.max(lines.length, 1) * lineHeight
+    return estimatedWidth > maxWidth * 1.08 || estimatedHeight > maxHeight * 1.12
+  }, [
+    block.maxEditWidth, block.originalWidth, block.width, block.isEdited,
+    block.averageAdvance, block.originalStr, block.lineHeight, block.height,
+    block.maxEditHeight, block.originalHeight, isExtracted, draftText, fontSize,
+  ])
+
   let opacity = 1
   let background = 'transparent'
   let borderColor = 'transparent'
@@ -252,6 +270,10 @@ export default function TextBlock({
   // Hide hard border for committed edits — the feathered bg replaces it
   if (isCommitted) {
     borderColor = 'transparent'
+  }
+
+  if (fitOverflow && (editing || isSelected)) {
+    borderColor = '#f97316'
   }
 
   // ── Width: grow right as you type, never wrap ──────────────────────────────
@@ -315,7 +337,9 @@ export default function TextBlock({
         // Smooth visibility toggle
         transition: editing ? 'none' : 'opacity 80ms, border-color 80ms',
         // Feathered shadow for committed edits, blue glow when editing
-        boxShadow: featherShadow,
+        boxShadow: fitOverflow && (editing || isSelected)
+          ? '0 0 0 2px rgba(249,115,22,0.18)'
+          : featherShadow,
       }}
       onMouseDown={handleMouseDown}
       onMouseEnter={handleMouseEnter}
@@ -324,7 +348,7 @@ export default function TextBlock({
       onDoubleClick={handleDoubleClick}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
-      title={editing ? undefined : 'Double-click to edit'}
+      title={fitOverflow ? 'Text may overflow the original PDF run' : editing ? undefined : 'Double-click to edit'}
     >
       {block.isEdited && !editing && block.originalStr && (
         <span

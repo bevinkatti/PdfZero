@@ -1,4 +1,5 @@
 import * as pdfjsLib from 'pdfjs-dist'
+import { buildExtractedTextMetrics, estimateGlyphsForRun } from './pdfTextLayout.js'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -317,27 +318,66 @@ export async function extractTextItems(pageNum) {
     // Override bold if inferred (only when we don't have a real name)
     if (!realName && inferredBold) fontInfo.bold = true
 
+    const textMetrics = buildExtractedTextMetrics(item, geom, BASE_SCALE)
+    const rotation = Math.atan2(tx[1] || 0, tx[0] || 1) * 180 / Math.PI
+
     raw.push({
       id:          `txt-${pageNum}-${idx}`,
       str:         item.str,
+      originalStr: item.str,
       x,
       y,
       width:       round2(geom.width),
       height:      round2(geom.height),
       fontSize:    round2(fontSize),
+      lineHeight:  round2(geom.height),
       baselineOffset: round2(geom.baselineOffset),
       ascent:      round2(geom.ascent),
       descent:     round2(geom.descent),
       scaleX:      round2(geom.scaleX),
       scaleY:      round2(geom.scaleY),
+      rotation:    round2(rotation),
+      textMatrix:  item.transform,
+      transform:   tx.map(round2),
       // Font info for display
       fontName:    realName || internalId,
+      internalFontName: internalId,
+      embeddedFontName: realName || '',
       fontFamily:  fontInfo.css,
       fontBold:    fontInfo.bold,
       fontItalic:  fontInfo.italic,
+      fontWeight:  fontInfo.bold ? 'bold' : 'normal',
+      fontStyle:   fontInfo.italic ? 'italic' : 'normal',
+      fontResource: {
+        internalName: internalId,
+        resolvedName: realName || '',
+        cssFamily: fontInfo.css,
+        standardFallback: fontInfo.family,
+        embedded: Boolean(realName),
+        subset: /^[A-Z]{6}\+/.test(fontNames[internalId] || ''),
+        source: realName ? 'pdfjs-commonObjs' : 'fallback-classifier',
+      },
       // For pdf-lib export
       stdFont:     fontInfo.family,
+      operatorColor: colorMap[idx] || null,
       color:       colorMap[idx] || '#000000',
+      colorSource: colorMap[idx] ? 'operator-list' : 'default',
+      colorSpace:  'DeviceRGB',
+      fillOpacity: 1,
+      textRenderingMode: 0,
+      charSpacing: 0,
+      wordSpacing: 0,
+      horizontalScale: 1,
+      editBox: {
+        x,
+        y,
+        width: round2(geom.width),
+        height: round2(geom.height),
+        baseline: round2(y + geom.baselineOffset),
+        maxWidth: round2(geom.width),
+        maxHeight: round2(geom.height),
+      },
+      ...textMetrics,
       isExtracted: true,
     })
     idx++
@@ -372,14 +412,38 @@ function mergeLineFragments(items) {
 
       if (sameFont && sameColor && sameLine && adjacent) {
         const spacer = gap > curr.fontSize * 0.25 ? ' ' : ''
+        const mergedText = curr.str + spacer + next.str
+        const mergedWidth = (next.x + next.width) - curr.x
+        const mergedHeight = Math.max(curr.height, next.height)
         curr = {
           ...curr,
-          str:      curr.str + spacer + next.str,
-          width:    (next.x + next.width) - curr.x,
-          height:   Math.max(curr.height, next.height),
+          str:      mergedText,
+          originalStr: mergedText,
+          width:    mergedWidth,
+          height:   mergedHeight,
+          originalWidth: round2(mergedWidth),
+          originalHeight: round2(mergedHeight),
+          maxEditWidth: round2(mergedWidth),
+          maxEditHeight: round2(mergedHeight),
+          widthPts: round2(mergedWidth / BASE_SCALE),
+          heightPts: round2(mergedHeight / BASE_SCALE),
+          naturalGlyphCount: [...mergedText].length,
+          averageAdvance: [...mergedText].length ? round2(mergedWidth / [...mergedText].length) : 0,
+          lineHeight: round2(Math.max(curr.lineHeight || curr.height, next.lineHeight || next.height)),
           baselineOffset: Math.max(curr.baselineOffset || curr.fontSize * 0.8, next.baselineOffset || next.fontSize * 0.8),
           children: [...curr.children, next.id],
           fragments: [...(curr.fragments || [items[i]]), next],
+          glyphs: estimateGlyphsForRun(mergedText, mergedWidth, curr.fontSize),
+          editBox: {
+            ...(curr.editBox || {}),
+            x: curr.x,
+            y: curr.y,
+            width: round2(mergedWidth),
+            height: round2(mergedHeight),
+            baseline: round2(curr.y + Math.max(curr.baselineOffset || curr.fontSize * 0.8, next.baselineOffset || next.fontSize * 0.8)),
+            maxWidth: round2(mergedWidth),
+            maxHeight: round2(mergedHeight),
+          },
         }
         j++
       } else {
@@ -489,6 +553,101 @@ export function sampleLocalBackground(canvas, x, y, w, h, scale = 1) {
 
     return `rgb(${median(0)},${median(1)},${median(2)})`
   } catch { return null }
+}
+
+function parseCssRgb(color) {
+  if (!color) return null
+  if (color.startsWith('#')) {
+    const hex = color.slice(1).padEnd(6, '0')
+    return [
+      parseInt(hex.slice(0, 2), 16),
+      parseInt(hex.slice(2, 4), 16),
+      parseInt(hex.slice(4, 6), 16),
+    ]
+  }
+  const m = color.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/)
+  return m ? [+m[1], +m[2], +m[3]] : null
+}
+
+function toHexColor([r, g, b]) {
+  const h = v => Math.round(Math.min(Math.max(v, 0), 255)).toString(16).padStart(2, '0')
+  return `#${h(r)}${h(g)}${h(b)}`
+}
+
+function colorDistance(a, b) {
+  const dr = a[0] - b[0]
+  const dg = a[1] - b[1]
+  const db = a[2] - b[2]
+  return Math.sqrt(dr * dr + dg * dg + db * db)
+}
+
+// Rendered text color is often more reliable than operator-list color mapping:
+// PDF.js text items and PDF show-text operators do not always line up 1:1.
+export function sampleTextColor(canvas, x, y, w, h, scale = 1, fallbackBg = 'white') {
+  try {
+    const ctx = canvas.getContext('2d')
+    const cw = canvas.width, ch = canvas.height
+    const pad = Math.max(1, Math.round(1.5 * scale))
+    const sx = Math.max(0, Math.floor(x * scale) - pad)
+    const sy = Math.max(0, Math.floor(y * scale) - pad)
+    const sw = Math.min(cw - sx, Math.ceil(w * scale) + pad * 2)
+    const sh = Math.min(ch - sy, Math.ceil(h * scale) + pad * 2)
+    if (sw <= 1 || sh <= 1) return null
+
+    const bg = parseCssRgb(sampleLocalBackground(canvas, x, y, w, h, scale) || fallbackBg) || [255, 255, 255]
+    const data = ctx.getImageData(sx, sy, sw, sh).data
+    const samples = []
+    const stride = sw * sh > 12000 ? 2 : 1
+
+    for (let py = 0; py < sh; py += stride) {
+      for (let px = 0; px < sw; px += stride) {
+        const i = (py * sw + px) * 4
+        const alpha = data[i + 3]
+        if (alpha < 32) continue
+        const rgb = [data[i], data[i + 1], data[i + 2]]
+        const dist = colorDistance(rgb, bg)
+        if (dist < 35) continue
+        samples.push({ rgb, weight: dist * dist })
+      }
+    }
+
+    if (samples.length < 4) return null
+
+    const totals = samples.reduce((acc, sample) => {
+      acc[0] += sample.rgb[0] * sample.weight
+      acc[1] += sample.rgb[1] * sample.weight
+      acc[2] += sample.rgb[2] * sample.weight
+      acc[3] += sample.weight
+      return acc
+    }, [0, 0, 0, 0])
+
+    if (!totals[3]) return null
+    const sampled = [totals[0] / totals[3], totals[1] / totals[3], totals[2] / totals[3]]
+
+    // Reject near-background noise; real glyph ink should still differ clearly.
+    if (colorDistance(sampled, bg) < 30) return null
+    return toHexColor(sampled)
+  } catch {
+    return null
+  }
+}
+
+export function applyCanvasTextColors(items, canvas, scale = 1, fallbackBg = 'white') {
+  if (!canvas || !items?.length) return items || []
+
+  return items.map(item => {
+    const sampled = sampleTextColor(canvas, item.x, item.y, item.width, item.height, scale, fallbackBg)
+    if (!sampled) return item
+    if ((item.color || '').toLowerCase() === sampled.toLowerCase() && item.colorSource === 'canvas-sampled') {
+      return item
+    }
+    return {
+      ...item,
+      operatorColor: item.operatorColor || item.color || null,
+      color: sampled,
+      colorSource: 'canvas-sampled',
+    }
+  })
 }
 
 export async function getPageBaseSize(pageNum) {

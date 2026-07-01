@@ -124,13 +124,58 @@ src/
     globals.css      # Design system tokens
 ```
 
-### How text editing works
+### Text editing architecture
 
-1. **Render** - PDF.js renders the PDF page onto a `<canvas>` at 1.5x scale.
-2. **Extract** - PDF.js text content API returns every word with its position, font, and size.
-3. **Overlay** - Transparent `contenteditable` divs are positioned exactly over each word.
-4. **Edit** - The user double-clicks and edits text directly.
-5. **Export** - `pdf-lib` writes the changed text back into the PDF with the closest standard font.
+PDFZero uses a layered editing model:
+
+```text
+PDF bytes
+  -> PDF.js render + text extraction
+  -> canonical text run metadata
+  -> browser overlay editor
+  -> layout-fit/export planner
+  -> pdf-lib browser export
+  -> future PDFium/MuPDF advanced engine
+```
+
+Current browser path:
+
+1. **Render** - PDF.js renders each page to a high-resolution canvas.
+2. **Extract** - PDF.js extracts text runs, transforms, font ids, approximate font names, color, baseline, ascent/descent, and edit boxes.
+3. **Model** - PDFZero stores original run metadata: text, bbox, baseline, font fallback, color, line height, estimated glyph advances, and max edit dimensions.
+4. **Overlay** - Editable DOM text is positioned over the PDF raster and uses local background sampling to hide the original text while editing.
+5. **Fit** - On export, edited text is laid out line-by-line and fit back to the original run width using conservative character spacing and small size adjustment.
+6. **Export** - pdf-lib writes background patches, replacement text, annotations, page operations, and document tools.
+
+This is not yet full Acrobat/Foxit-style object editing. The current path is an overlay-and-repair browser exporter. The production-grade target is an advanced engine that can inspect and rewrite PDF page objects directly:
+
+```text
+src/pdf/
+  engines/
+    pdfjsEngine.ts       # Browser render/extract fallback
+    pdfiumEngine.ts      # Planned object-level editor
+    mupdfEngine.ts       # Optional native/WASM alternative
+  model/
+    TextRun.ts           # glyphs, fonts, colors, matrices, resources
+    FontResource.ts
+    EditOperation.ts
+  layout/
+    glyphMetrics.ts
+    fitText.ts
+    paragraphReflow.ts
+  background/
+    renderWithoutText.ts
+    inpaintPatch.ts
+  export/
+    exportPlanner.ts
+    pdfLibOverlayExporter.ts
+    objectRewriteExporter.ts
+  repair/
+    visualDiff.ts
+    autoFitRepair.ts
+```
+
+The browser-only implementation can be excellent for simple and moderately complex PDFs. True high-level editing for embedded subset fonts, object removal, kerning-preserving replacement, complex scripts, and image/gradient background reconstruction requires PDFium, MuPDF, or another real PDF content engine.
 
 ---
 
@@ -142,13 +187,20 @@ src/
 - [x] Annotations (highlight, redact, shapes)
 - [x] Merge, split, compress tools
 - [x] Watermark, rotate, page management
-- [ ] **v1.1** - OCR via Tesseract.js
-- [ ] **v1.1** - AI font matching (WebGPU)
+- [x] Preserve richer original text-run metadata for export fitting
+- [x] Fit edited text back to the original run width during pdf-lib export
+- [ ] **v1.1** - OCR via Tesseract.js with searchable text layer
+- [ ] **v1.1** - Visual export diff for edited regions
+- [ ] **v1.1** - Packaged fallback font registry with width-vector matching
 - [ ] **v1.1** - Image add/replace/remove
 - [ ] **v1.1** - e-Sign with canvas signature pad
+- [ ] **v1.2** - Paragraph grouping and multi-line reflow
 - [ ] **v1.2** - PDF to Word/DOCX export
 - [ ] **v1.2** - Form filling and flattening
 - [ ] **v1.2** - Batch processing
+- [ ] **Advanced** - PDFium/MuPDF object-level text replacement
+- [ ] **Advanced** - Embedded font reuse and kerning-preserving export
+- [ ] **Advanced** - Background reconstruction by rendering pages with target text objects removed
 
 ---
 

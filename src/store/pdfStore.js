@@ -138,8 +138,27 @@ export const usePdfStore = create((set, get) => ({
       baselineOffset: originalBlock.baselineOffset,
       ascent:     originalBlock.ascent,
       descent:    originalBlock.descent,
+      scaleX:     originalBlock.scaleX,
+      scaleY:     originalBlock.scaleY,
+      rotation:   originalBlock.rotation || 0,
+      lineHeight: originalBlock.lineHeight,
+      editBox:    originalBlock.editBox,
+      glyphs:     originalBlock.glyphs,
+      kerning:    originalBlock.kerning,
+      kerningSource: originalBlock.kerningSource,
       // Color from original
       color:      originalBlock.color || '#000000',
+      colorSpace: originalBlock.colorSpace || 'DeviceRGB',
+      fillOpacity: originalBlock.fillOpacity ?? 1,
+      textRenderingMode: originalBlock.textRenderingMode ?? 0,
+      charSpacing: originalBlock.charSpacing ?? 0,
+      wordSpacing: originalBlock.wordSpacing ?? 0,
+      horizontalScale: originalBlock.horizontalScale ?? 1,
+      fontResource: originalBlock.fontResource,
+      internalFontName: originalBlock.internalFontName,
+      embeddedFontName: originalBlock.embeddedFontName,
+      fontWeight: originalBlock.fontWeight,
+      fontStyle: originalBlock.fontStyle,
       // Edited string
       str:        newStr,
       // Flags
@@ -156,6 +175,11 @@ export const usePdfStore = create((set, get) => ({
       originalHeight: originalBlock.height,
       originalFontSize: originalBlock.fontSize,
       originalBaselineOffset: originalBlock.baselineOffset,
+      originalLineHeight: originalBlock.lineHeight,
+      maxEditWidth: originalBlock.maxEditWidth ?? originalBlock.width,
+      maxEditHeight: originalBlock.maxEditHeight ?? originalBlock.height,
+      exportStrategy: 'overlay-fit',
+      visualDriftScore: null,
     }
 
     const existing = layer.texts.find(t => t.id === editId)
@@ -169,6 +193,13 @@ export const usePdfStore = create((set, get) => ({
           originalHeight: existing.originalHeight ?? originalBlock.height,
           originalFontSize: existing.originalFontSize ?? originalBlock.fontSize,
           originalBaselineOffset: existing.originalBaselineOffset ?? originalBlock.baselineOffset,
+          originalLineHeight: existing.originalLineHeight ?? originalBlock.lineHeight,
+          maxEditWidth: existing.maxEditWidth ?? originalBlock.maxEditWidth ?? originalBlock.width,
+          maxEditHeight: existing.maxEditHeight ?? originalBlock.maxEditHeight ?? originalBlock.height,
+          editBox: existing.editBox ?? originalBlock.editBox,
+          glyphs: existing.glyphs ?? originalBlock.glyphs,
+          kerning: existing.kerning ?? originalBlock.kerning,
+          fontResource: existing.fontResource ?? originalBlock.fontResource,
         }
       : editedBlock
     const newTexts = existing

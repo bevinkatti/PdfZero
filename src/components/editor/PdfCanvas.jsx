@@ -1,7 +1,14 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import toast from 'react-hot-toast'
 import { usePdfStore } from '../../store/pdfStore.js'
-import { renderPage, extractTextItems, detectPageBackground, sampleLocalBackground, BASE_SCALE } from '../../lib/pdfRenderer.js'
+import {
+  renderPage,
+  extractTextItems,
+  detectPageBackground,
+  sampleLocalBackground,
+  applyCanvasTextColors,
+  BASE_SCALE,
+} from '../../lib/pdfRenderer.js'
 import TextBlock, { TextContextToolbar } from './TextBlock.jsx'
 import AnnotationLayer from './AnnotationLayer.jsx'
 import styles from './PdfCanvas.module.css'
@@ -23,6 +30,7 @@ export default function PdfCanvas() {
   const [isRendering, setIsRendering] = useState(false)
   const [textItems,   setTextItems]   = useState([])
   const [pageBg,      setPageBgLocal] = useState('white')
+  const [canvasVersion, setCanvasVersion] = useState(0)
   // Per-block editing state — lifted here so context toolbar can trigger edit
   const [editingId,   setEditingId]   = useState(null)
 
@@ -59,6 +67,7 @@ export default function PdfCanvas() {
         el.style.height = baseH + 'px'
         el.getContext('2d').drawImage(canvas, 0, 0)
         setPageBg(detectPageBackground(canvas))
+        setCanvasVersion(v => v + 1)
         setIsRendering(false)
       })
       .catch(e => {
@@ -77,6 +86,33 @@ export default function PdfCanvas() {
       .then(setTextItems)
       .catch(() => setTextItems([]))
   }, [file, currentPage])
+
+  useEffect(() => {
+    if (!textItems.length || !canvasRef.current || isRendering) return
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const canvasScale = zoom * dpr
+
+    setTextItems(prev => {
+      let changed = false
+      const next = applyCanvasTextColors(prev, canvasRef.current, canvasScale, pageBg)
+      for (let i = 0; i < next.length; i++) {
+        if (next[i].color !== prev[i]?.color || next[i].colorSource !== prev[i]?.colorSource) {
+          changed = true
+          break
+        }
+      }
+      return changed ? next : prev
+    })
+  }, [textItems.length, canvasVersion, zoom, pageBg, isRendering])
+
+  useEffect(() => {
+    if (!selectedElement || selectedElementPage !== currentPage) return
+    const corrected = textItems.find(item => item.id === selectedElement.id)
+    if (!corrected) return
+    if (corrected.color !== selectedElement.color || corrected.colorSource !== selectedElement.colorSource) {
+      setSelectedElement(corrected, currentPage)
+    }
+  }, [textItems, selectedElement, selectedElementPage, currentPage, setSelectedElement])
 
   /* ── Canvas background click ── */
   const handleClick = useCallback((e) => {
