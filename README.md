@@ -4,7 +4,7 @@
 
 > Edit PDFs without uploading anywhere. No task limits. No sign-up. Free.
 
-[![Open Source](https://img.shields.io/badge/open%20source-yes-brightgreen)]()
+[![Open Source](https://img.shields.io/badge/open%20-source-brightgreen)]()
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Privacy First](https://img.shields.io/badge/privacy-100%25%20local-success)]()
 [![Offline Ready](https://img.shields.io/badge/offline-ready-blueviolet)]()
