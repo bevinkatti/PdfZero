@@ -175,9 +175,28 @@
 
   .toolbar { padding: 6px 8px; gap: 3px; }
 
-  /* Bigger touch targets on mobile — 30px is borderline too small to tap reliably */
-  .toolBtn { width: 36px; height: 34px; }
-  .aiBtn { padding: 7px 10px; font-size: 13px; }
-  .exportBtn { padding: 8px 12px; font-size: 13px; white-space: nowrap; }
+  /* 44×44px minimum touch targets (Apple HIG / Android guideline) */
+  .toolBtn { width: 44px; height: 44px; }
+  .fmtBtn  { width: 44px; height: 44px; }
+  .aiBtn   { padding: 10px 12px; min-height: 44px; font-size: 13px; }
   .zoomLabel { min-width: 34px; font-size: 11px; }
+
+  /* Pin Download PDF to the right edge of the scrollable toolbar so it's
+     always visible without the user needing to scroll to find it */
+  .exportBtn {
+    position: sticky;
+    right: 0;
+    z-index: 2;
+    padding: 10px 14px;
+    min-height: 44px;
+    font-size: 13px;
+    white-space: nowrap;
+    box-shadow: -10px 0 16px var(--bg-panel);
+  }
+
+  /* Remove 300ms tap delay on older iOS and kill the tap flash */
+  .toolBtn, .fmtBtn, .aiBtn, .exportBtn {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
 }

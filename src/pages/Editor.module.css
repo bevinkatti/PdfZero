@@ -158,6 +158,16 @@
    slide-in overlays anchored to .workspace (position:relative above),
    triggered by buttons in the toolbar. Canvas always takes full width.
    ════════════════════════════════════════════════════════════════════ */
+
+/* ── iOS safe area: prevent status bar / home indicator overlap ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  @media (max-width: 768px) and (pointer: coarse) {
+    .page {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+  }
+}
+
 @media (max-width: 768px) {
   .leftPanel,
   .rightPanel {

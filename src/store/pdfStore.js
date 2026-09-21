@@ -12,6 +12,41 @@ const pushHistory = (s) => ({
   historyFuture: [],
 })
 
+// ── sessionStorage persistence: survives viewport resize / component remount ──
+const SESSION_KEY = 'pdfzero_pdf_bytes'
+
+function _saveBytesToSession(arrayBuffer) {
+  try {
+    const uint8 = new Uint8Array(arrayBuffer)
+    let binary = ''
+    const CHUNK = 8192
+    for (let i = 0; i < uint8.length; i += CHUNK) {
+      binary += String.fromCharCode(...uint8.subarray(i, i + CHUNK))
+    }
+    sessionStorage.setItem(SESSION_KEY, btoa(binary))
+  } catch (e) {
+    console.warn('[PdfZero] sessionStorage save failed:', e)
+  }
+}
+
+function _loadBytesFromSession() {
+  try {
+    const b64 = sessionStorage.getItem(SESSION_KEY)
+    if (!b64) return null
+    const binary = atob(b64)
+    const uint8 = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) uint8[i] = binary.charCodeAt(i)
+    return uint8.buffer
+  } catch (e) {
+    console.warn('[PdfZero] sessionStorage restore failed:', e)
+    return null
+  }
+}
+
+function _clearSession() {
+  try { sessionStorage.removeItem(SESSION_KEY) } catch (_) {}
+}
+
 export const usePdfStore = create((set, get) => ({
   file: null,
   fileName: '',
@@ -43,7 +78,10 @@ export const usePdfStore = create((set, get) => ({
   mobilePagesOpen: false,
   mobilePropertiesOpen: false,
 
-  setFile:           (file, fileName, fileSize) => set({ file, fileName, fileSize }),
+  setFile: (file, fileName, fileSize) => {
+    if (file) _saveBytesToSession(file)
+    set({ file, fileName, fileSize })
+  },
   setPageCount:      (pageCount)   => set({ pageCount }),
   setCurrentPage:    (p)           => set({ currentPage: p, selectedElement: null, selectedElementPage: null }),
   setZoom:           (z)           => set({ zoom: Math.max(0.25, Math.min(3.0, Math.round(z * 100) / 100)) }),
@@ -277,13 +315,23 @@ export const usePdfStore = create((set, get) => ({
     return didRedo
   },
 
-  reset: () => set({
-    file: null, fileName: '', fileSize: 0, pageCount: 0, currentPage: 1,
-    zoom: 1.0, editLayers: {}, extractedEdits: {}, selectedElement: null,
-    selectedElementPage: null, activeTool: "select", pageBgs: {}, blockBgs: {},
-    historyPast: [], historyFuture: [],
-    mobilePagesOpen: false, mobilePropertiesOpen: false,
-  }),
+  reset: () => {
+    _clearSession()
+    set({
+      file: null, fileName: '', fileSize: 0, pageCount: 0, currentPage: 1,
+      zoom: 1.0, editLayers: {}, extractedEdits: {}, selectedElement: null,
+      selectedElementPage: null, activeTool: "select", pageBgs: {}, blockBgs: {},
+      historyPast: [], historyFuture: [],
+      mobilePagesOpen: false, mobilePropertiesOpen: false,
+    })
+  },
+
+  initFromSession: () => {
+    const bytes = _loadBytesFromSession()
+    if (bytes && !get().file) {
+      set({ file: bytes })
+    }
+  },
 }))
 
 // ── pageBgs added separately so we don't rewrite the whole store ──
