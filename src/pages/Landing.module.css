@@ -243,6 +243,8 @@
   cursor: default;
 }
 
+.featureLink { display: block; color: inherit; text-decoration: none; cursor: pointer; }
+
 .featureCard:hover {
   border-color: var(--brd-3);
   background: var(--bg-card);

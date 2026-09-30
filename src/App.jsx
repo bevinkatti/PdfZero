@@ -5,6 +5,7 @@ import { Analytics } from '@vercel/analytics/react'
 import Landing from './pages/Landing.jsx'
 import Editor from './pages/Editor.jsx'
 import Tools from './pages/Tools.jsx'
+import MultiPageLayout from './pages/MultiPageLayout.jsx'
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/editor" element={<Editor />} />
         <Route path="/tools" element={<Tools />} />
+        <Route path="/tools/multi-page-layout" element={<MultiPageLayout />} />
         <Route path="/tools/:toolId" element={<Tools />} />
       </Routes>
       <Toaster
