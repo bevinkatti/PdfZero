@@ -186,7 +186,7 @@ The browser-only implementation can be excellent for simple and moderately compl
 - [x] Watermark, rotate, page management
 - [x] Preserve richer original text-run metadata for export fitting
 - [x] Fit edited text back to the original run width during pdf-lib export
-- [ ] **v1.5** - Packaged fallback font registry with width-vector matching
+- [ ] Packaged fallback font registry with width-vector matching
 - [ ] Image add/replace/remove
 - [ ] OCR via Tesseract.js with searchable text layer
 - [ ] Visual export diff for edited regions
