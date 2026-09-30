@@ -38,9 +38,7 @@ Edit, organize, secure, and optimize PDFs directly in your browser - all FREE wh
 | File privacy | Files may be uploaded to a server | **100% local** |
 | Offline use | Usually browser or cloud-based | **Works offline** |
 | Open source | Rare | **MIT** |
-| OCR for scanned PDFs | Often paid | **Free** |
-| e-Sign PDFs | Often paid | **Free** |
-| Cost | Many plans charge monthly | **Free** |
+| Cost | Many plans charge monthly | **Free** |  
 
 ---
 
@@ -50,7 +48,7 @@ Edit, organize, secure, and optimize PDFs directly in your browser - all FREE wh
 - **Edit existing PDF text** - click any text block, edit in-place, and auto-detect the original font
 - Add new text boxes anywhere on the page
 - Change font family, size, color, bold, and italic
-- Add, replace, and remove images
+- Add, replace, and remove images (Coming soon)
 
 ### Organize
 - Merge multiple PDFs with drag-to-reorder
@@ -69,7 +67,7 @@ Edit, organize, secure, and optimize PDFs directly in your browser - all FREE wh
 - Redact sensitive content permanently
 - Add text watermarks
 
-### Smart
+### Smart (Coming soon)
 - OCR for scanned and image PDFs with Tesseract.js, running offline
 - AI font matching to keep text edits visually consistent
 
@@ -188,15 +186,15 @@ The browser-only implementation can be excellent for simple and moderately compl
 - [x] Watermark, rotate, page management
 - [x] Preserve richer original text-run metadata for export fitting
 - [x] Fit edited text back to the original run width during pdf-lib export
-- [ ] **v1.1** - OCR via Tesseract.js with searchable text layer
-- [ ] **v1.1** - Visual export diff for edited regions
-- [ ] **v1.1** - Packaged fallback font registry with width-vector matching
-- [ ] **v1.1** - Image add/replace/remove
-- [ ] **v1.1** - e-Sign with canvas signature pad
-- [ ] **v1.2** - Paragraph grouping and multi-line reflow
-- [ ] **v1.2** - PDF to Word/DOCX export
-- [ ] **v1.2** - Form filling and flattening
-- [ ] **v1.2** - Batch processing
+- [ ] **v1.2** - OCR via Tesseract.js with searchable text layer
+- [ ] **v1.2** - Visual export diff for edited regions
+- [ ] **v1.2** - Packaged fallback font registry with width-vector matching
+- [ ] **v1.2** - Image add/replace/remove
+- [ ] **v1.3** - e-Sign with canvas signature pad
+- [ ] **v1.3** - Paragraph grouping and multi-line reflow
+- [ ] **v1.3** - PDF to Word/DOCX export
+- [ ] **v1.3** - Form filling and flattening
+- [ ] **v1.3** - Batch processing
 - [ ] **Advanced** - PDFium/MuPDF object-level text replacement
 - [ ] **Advanced** - Embedded font reuse and kerning-preserving export
 - [ ] **Advanced** - Background reconstruction by rendering pages with target text objects removed
