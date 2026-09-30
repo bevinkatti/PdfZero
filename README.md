@@ -186,15 +186,15 @@ The browser-only implementation can be excellent for simple and moderately compl
 - [x] Watermark, rotate, page management
 - [x] Preserve richer original text-run metadata for export fitting
 - [x] Fit edited text back to the original run width during pdf-lib export
-- [ ] **v1.2** - OCR via Tesseract.js with searchable text layer
-- [ ] **v1.2** - Visual export diff for edited regions
-- [ ] **v1.2** - Packaged fallback font registry with width-vector matching
-- [ ] **v1.2** - Image add/replace/remove
-- [ ] **v1.3** - e-Sign with canvas signature pad
-- [ ] **v1.3** - Paragraph grouping and multi-line reflow
-- [ ] **v1.3** - PDF to Word/DOCX export
-- [ ] **v1.3** - Form filling and flattening
-- [ ] **v1.3** - Batch processing
+- [ ] **v1.5** - Packaged fallback font registry with width-vector matching
+- [ ] Image add/replace/remove
+- [ ] OCR via Tesseract.js with searchable text layer
+- [ ] Visual export diff for edited regions
+- [ ] e-Sign with canvas signature pad
+- [ ] Paragraph grouping and multi-line reflow
+- [ ] PDF to Word/DOCX export
+- [ ] Form filling and flattening
+- [ ] Batch processing
 - [ ] **Advanced** - PDFium/MuPDF object-level text replacement
 - [ ] **Advanced** - Embedded font reuse and kerning-preserving export
 - [ ] **Advanced** - Background reconstruction by rendering pages with target text objects removed
