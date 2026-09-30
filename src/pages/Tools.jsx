@@ -6,7 +6,7 @@ import {
   Scissors, Merge, FileDown, RotateCcw, ScanLine, Lock,
   Unlock, Droplets, EyeOff, Edit3, FileSearch, Layers,
   ChevronRight, Upload, FileText, X, Loader2, RotateCw, Image as ImageIcon,
-  GripVertical, Check, ArrowLeft
+  GripVertical, Check, ArrowLeft, Grid2X2
 } from 'lucide-react'
 import Navbar from '../components/layout/Navbar.jsx'
 import {
@@ -1098,6 +1098,7 @@ function EditTool() {
 
 /* ─────────────────── tool registry ─────────────────── */
 const TOOL_DEFS = [
+  { id:'multi-page-layout', icon:Grid2X2, label:'Multi-Page Layout Studio', color:'#a78bfa', category:'Organize', desc:'Arrange multiple PDF pages on each output sheet.' },
   { id:'edit',      icon:Edit3,       label:'Edit PDF',       color:'#e84545', category:'Edit',     desc:'Edit text, images, annotate.' },
   { id:'merge',     icon:Merge,       label:'Merge PDFs',     color:'#3b82f6', category:'Organize', desc:'Combine multiple PDFs into one.' },
   { id:'split',     icon:Scissors,    label:'Split PDF',      color:'#e84545', category:'Organize', desc:'Split by range or every N pages.' },
@@ -1124,6 +1125,7 @@ const CATEGORIES = ['All','Organize','Optimize','Convert','Secure','Edit']
 export default function Tools() {
   const [activeCat,  setActiveCat]  = useState('All')
   const [activeTool, setActiveTool] = useState(null)
+  const navigate = useNavigate()
 
   const filtered = activeCat === 'All' ? TOOL_DEFS : TOOL_DEFS.filter(t => t.category === activeCat)
   const ToolUI   = activeTool ? TOOL_COMPONENTS[activeTool] : null
@@ -1146,7 +1148,7 @@ export default function Tools() {
             {filtered.map(tool => {
               const Icon = tool.icon
               return (
-                <button key={tool.id} className={`${styles.toolListItem} ${activeTool===tool.id?styles.toolListActive:''}`} onClick={()=>setActiveTool(tool.id)}>
+                <button key={tool.id} className={`${styles.toolListItem} ${activeTool===tool.id?styles.toolListActive:''}`} onClick={()=>tool.id === 'multi-page-layout' ? navigate('/tools/multi-page-layout') : setActiveTool(tool.id)}>
                   <div className={styles.toolListIcon} style={{ background: tool.color+'18' }}>
                     <Icon size={15} style={{ color: tool.color }} />
                   </div>
@@ -1179,7 +1181,7 @@ export default function Tools() {
                   {filtered.map(tool => {
                     const Icon = tool.icon
                     return (
-                      <div key={tool.id} className={styles.toolCard} onClick={() => setActiveTool(tool.id)}>
+                      <div key={tool.id} className={styles.toolCard} onClick={() => tool.id === 'multi-page-layout' ? navigate('/tools/multi-page-layout') : setActiveTool(tool.id)}>
                         <div className={styles.toolCardIcon} style={{ background: tool.color+'18' }}>
                           <Icon size={22} style={{ color: tool.color }} />
                         </div>

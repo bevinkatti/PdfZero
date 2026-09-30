@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import {
   FileText, Edit3, Scissors, Merge, ScanLine, Zap,
   Lock, Globe, ChevronRight, Check, X, Github,
-  Image, PenTool, RotateCcw, FileDown,
+  Image, RotateCcw, FileDown, Grid2X2,
   Eye, Droplets, FileSearch
 } from 'lucide-react'
 import Navbar from '../components/layout/Navbar.jsx'
@@ -15,7 +15,7 @@ const FEATURES = [
   { icon: Merge, label: 'Merge PDFs', desc: 'Drag and drop to combine multiple PDFs with full page-order control.' },
   { icon: Scissors, label: 'Split PDF', desc: 'Split by page ranges, every N pages, or extract individual pages.' },
   { icon: Image, label: 'Edit images', desc: 'Add, remove, replace, or reposition images anywhere in a PDF.' },
-  { icon: PenTool, label: 'e-Sign', desc: 'Draw, type, or upload your signature. Apply it to any page with no extra account needed.' },
+  { icon: Grid2X2, label: 'Multi-Page Layout Studio', desc: 'Arrange multiple PDF pages on a single sheet. Customize layouts, spacing, paper size, and export your PDF.', to: '/tools/multi-page-layout' },
   { icon: FileDown, label: 'Compress', desc: 'Reduce PDF file size by up to 80% using browser-native object stream compression.' },
   { icon: RotateCcw, label: 'Rotate and reorder', desc: 'Rotate individual pages and drag them into the right order visually.' },
   { icon: Lock, label: 'Password protect', desc: 'Add 256-bit AES encryption or remove existing passwords.' },
@@ -131,8 +131,7 @@ export default function Landing() {
           <div className={styles.featureGrid}>
             {FEATURES.map((f) => {
               const Icon = f.icon
-              return (
-                <div key={f.label} className={styles.featureCard}>
+              const content = <>
                   <div className={styles.featureIconWrap}>
                     <Icon size={20} />
                   </div>
@@ -141,8 +140,10 @@ export default function Landing() {
                     {f.tag && <span className={styles.featureTag}>{f.tag}</span>}
                   </div>
                   <div className={styles.featureDesc}>{f.desc}</div>
-                </div>
-              )
+                </>
+              return f.to
+                ? <Link key={f.label} to={f.to} className={styles.featureCard + ' ' + styles.featureLink}>{content}</Link>
+                : <div key={f.label} className={styles.featureCard}>{content}</div>
             })}
           </div>
         </div>
