@@ -18,7 +18,7 @@ PDFZero has a few principles that every change must respect:
 
 ```bash
 # 1. Fork the repo on GitHub, then clone your fork
-git clone https://github.com/<your-username>/PdfZero.git
+git clone https://github.com/bevinkatti/PdfZero.git
 cd PdfZero
 
 # 2. Install dependencies
