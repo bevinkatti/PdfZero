@@ -11,6 +11,7 @@ import { exportPdf, downloadBytes } from '../../lib/pdfExporter.js'
 import { renderPage } from '../../lib/pdfRenderer.js'
 import { ocrCanvas } from '../../lib/ocrEngine.js'
 import DropZone from '../ui/DropZone.jsx'
+import ShortcutsHelp from './ShortcutsHelp.jsx'
 import styles from './EditorToolbar.module.css'
 
 const TOOLS = [
@@ -289,6 +290,8 @@ export default function EditorToolbar() {
       <button className={styles.toolBtn} onClick={() => setZoom(zoom - 0.2)} title="Zoom out"><ZoomOut size={15} /></button>
       <span className={styles.zoomLabel}>{Math.round(zoom * 100)}%</span>
       <button className={styles.toolBtn} onClick={() => setZoom(zoom + 0.2)} title="Zoom in"><ZoomIn size={15} /></button>
+
+      <ShortcutsHelp />
 
       <div className={styles.spacer} />
 

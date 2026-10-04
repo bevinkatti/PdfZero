@@ -1,0 +1,114 @@
+.helpBtn {
+  width: 24px;
+  height: 28px;
+  margin-left: -2px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--tx-2);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.helpBtn:hover { background: var(--bg-card); color: var(--tx-1); }
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--bg-panel);
+  border: 1px solid var(--brd-2);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 20px;
+  width: min(460px, 90vw);
+  color: var(--tx-1);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.closeBtn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--tx-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.closeBtn:hover { background: var(--bg-card); color: var(--tx-1); }
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.table th {
+  text-align: left;
+  color: var(--tx-3);
+  font-weight: 500;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--brd-2);
+}
+.table td {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--brd);
+}
+.table th:last-child,
+.table td:last-child { text-align: right; }
+
+.kbd {
+  display: inline-block;
+  min-width: 24px;
+  padding: 2px 7px;
+  border: 1px solid var(--brd-3);
+  border-radius: var(--r-sm);
+  background: var(--bg-card);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: center;
+}
+.plus { margin: 0 4px; color: var(--tx-3); }
+
+.doneBtn {
+  margin-top: 16px;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--brd-2);
+  border-radius: var(--r-md);
+  background: var(--bg-card);
+  color: var(--tx-1);
+  cursor: pointer;
+}
+.doneBtn:hover { background: var(--bg-hover); }
+
+/* Keyboard shortcuts don't apply on mobile: hide the button and overlay */
+@media (max-width: 768px) {
+  .helpBtn,
+  .overlay { display: none; }
+}
