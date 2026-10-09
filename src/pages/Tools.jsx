@@ -6,7 +6,7 @@ import {
   Scissors, Merge, FileDown, RotateCcw, ScanLine, Lock,
   Unlock, Droplets, EyeOff, Edit3, FileSearch, Layers,
   ChevronRight, Upload, FileText, X, Loader2, RotateCw, Image as ImageIcon,
-  GripVertical, Check, ArrowLeft, Grid2X2
+  GripVertical, Check, ArrowLeft, Grid2X2, ChevronUp, ChevronDown
 } from 'lucide-react'
 import Navbar from '../components/layout/Navbar.jsx'
 import {
@@ -843,7 +843,14 @@ function ReorderTool() {
   const [order, setOrder]   = useState([])
   const [loading, setLoading] = useState(false)
   const [busy, setBusy]     = useState(false)
+  const [dragOverIdx, setDragOverIdx] = useState(null)
+  const [draggingIdx, setDraggingIdx] = useState(null)
+  const [touchActiveIdx, setTouchActiveIdx] = useState(null)
+  const [touchOverIdx, setTouchOverIdx] = useState(null)
+
   const dragIdx = React.useRef(null)
+  const touchDragIdx = React.useRef(null)
+  const gridRef = React.useRef(null)
 
   const onFile = async (f) => {
     setFile(f)
@@ -864,19 +871,87 @@ function ReorderTool() {
     setLoading(false)
   }
 
-  const handleDragStart = (i) => { dragIdx.current = i }
-  const handleDragOver  = (e) => e.preventDefault()
-  const handleDrop      = (i) => {
-    if (dragIdx.current === null || dragIdx.current === i) return
-    const newOrder = [...order]
-    const [moved]  = newOrder.splice(dragIdx.current, 1)
-    newOrder.splice(i, 0, moved)
-    setOrder(newOrder)
-    const newThumbs = [...thumbs]
-    const [mt] = newThumbs.splice(dragIdx.current, 1)
-    newThumbs.splice(i, 0, mt)
-    setThumbs(newThumbs)
+  const movePage = (fromIndex, toIndex) => {
+    if (toIndex < 0 || toIndex >= thumbs.length || fromIndex === toIndex) return
+    setOrder(prev => {
+      const next = [...prev]
+      const [moved] = next.splice(fromIndex, 1)
+      next.splice(toIndex, 0, moved)
+      return next
+    })
+    setThumbs(prev => {
+      const next = [...prev]
+      const [moved] = next.splice(fromIndex, 1)
+      next.splice(toIndex, 0, moved)
+      return next
+    })
+  }
+
+  const handleDragStart = (i) => {
+    dragIdx.current = i
+    setDraggingIdx(i)
+  }
+
+  const handleDragOver = (e, i) => {
+    e.preventDefault()
+    if (dragOverIdx !== i) setDragOverIdx(i)
+  }
+
+  const handleDragEnd = () => {
     dragIdx.current = null
+    setDraggingIdx(null)
+    setDragOverIdx(null)
+  }
+
+  const handleDrop = (i) => {
+    if (dragIdx.current !== null && dragIdx.current !== i) {
+      movePage(dragIdx.current, i)
+    }
+    dragIdx.current = null
+    setDraggingIdx(null)
+    setDragOverIdx(null)
+  }
+
+  const handleTouchStart = (i, e) => {
+    touchDragIdx.current = i
+    setTouchActiveIdx(i)
+    setTouchOverIdx(i)
+  }
+
+  const handleTouchMove = (e) => {
+    if (touchDragIdx.current === null) return
+    const touch = e.touches[0]
+    if (!touch) return
+
+    // Smooth auto-scroll when dragging near edges of the scrollable container
+    const container = gridRef.current
+    if (container) {
+      const rect = container.getBoundingClientRect()
+      const threshold = 50
+      if (touch.clientY < rect.top + threshold) {
+        container.scrollTop -= 10
+      } else if (touch.clientY > rect.bottom - threshold) {
+        container.scrollTop += 10
+      }
+    }
+
+    const elem = document.elementFromPoint(touch.clientX, touch.clientY)
+    const targetCard = elem?.closest?.('[data-reorder-index]')
+    if (targetCard) {
+      const targetIdx = parseInt(targetCard.getAttribute('data-reorder-index'), 10)
+      if (!isNaN(targetIdx) && targetIdx !== touchOverIdx) {
+        setTouchOverIdx(targetIdx)
+      }
+    }
+  }
+
+  const handleTouchEnd = () => {
+    if (touchDragIdx.current !== null && touchOverIdx !== null && touchDragIdx.current !== touchOverIdx) {
+      movePage(touchDragIdx.current, touchOverIdx)
+    }
+    touchDragIdx.current = null
+    setTouchActiveIdx(null)
+    setTouchOverIdx(null)
   }
 
   const handleSave = async () => {
@@ -893,7 +968,7 @@ function ReorderTool() {
   }
 
   return (
-    <ToolShell title="Reorder Pages" desc="Drag and drop pages into the order you want, then download.">
+    <ToolShell title="Reorder Pages" desc="Drag and drop pages into the order you want, then download." wide>
       {!file
         ? <FileDropper file={null} onFile={onFile} onClear={() => {}} />
         : (
@@ -906,21 +981,72 @@ function ReorderTool() {
             {loading
               ? <div className={styles.loadingRow}><Loader2 size={18} className={styles.spin}/> Loading pages...</div>
               : (
-                <div className={styles.reorderGrid}>
-                  {thumbs.map((t, i) => (
-                    <div
-                      key={t.page}
-                      className={styles.reorderCard}
-                      draggable
-                      onDragStart={() => handleDragStart(i)}
-                      onDragOver={handleDragOver}
-                      onDrop={() => handleDrop(i)}
-                    >
-                      <div className={styles.reorderHandle}><GripVertical size={12}/></div>
-                      <img src={t.dataUrl} alt={`Page ${t.page}`} className={styles.reorderThumb} />
-                      <span className={styles.reorderNum}>{i+1}</span>
-                    </div>
-                  ))}
+                <div
+                  ref={gridRef}
+                  className={styles.reorderGrid}
+                  onDragLeave={() => setDragOverIdx(null)}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                  onTouchCancel={handleTouchEnd}
+                >
+                  {thumbs.map((t, i) => {
+                    const isDragging = draggingIdx === i || touchActiveIdx === i
+                    const isOver = (dragOverIdx === i && draggingIdx !== i) || (touchOverIdx === i && touchActiveIdx !== null && touchActiveIdx !== i)
+                    return (
+                      <div
+                        key={t.page}
+                        data-reorder-index={i}
+                        className={`${styles.reorderCard} ${isDragging ? styles.reorderCardDragging : ''} ${isOver ? styles.reorderCardOver : ''}`}
+                        draggable
+                        onDragStart={() => handleDragStart(i)}
+                        onDragOver={(e) => handleDragOver(e, i)}
+                        onDragEnd={handleDragEnd}
+                        onDrop={() => handleDrop(i)}
+                      >
+                        <div className={styles.reorderThumbWrap}>
+                          <img src={t.dataUrl} alt={`Page ${t.page}`} className={styles.reorderThumb} />
+                        </div>
+                        <div className={styles.reorderFooter}>
+                          <div className={styles.reorderPageInfo}>
+                            <span className={styles.reorderNum}>Page {i + 1}</span>
+                            {t.page !== i + 1 && (
+                              <span className={styles.reorderOrig}>({t.page})</span>
+                            )}
+                          </div>
+                          <div className={styles.reorderActions}>
+                            <button
+                              type="button"
+                              className={styles.moveBtn}
+                              onClick={(e) => { e.stopPropagation(); movePage(i, i - 1) }}
+                              disabled={i === 0}
+                              title="Move earlier"
+                              aria-label={`Move page ${i + 1} earlier`}
+                            >
+                              <ChevronUp size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.moveBtn}
+                              onClick={(e) => { e.stopPropagation(); movePage(i, i + 1) }}
+                              disabled={i === thumbs.length - 1}
+                              title="Move later"
+                              aria-label={`Move page ${i + 1} later`}
+                            >
+                              <ChevronDown size={16} />
+                            </button>
+                            <div
+                              className={styles.reorderHandle}
+                              title="Drag to reorder"
+                              aria-label="Drag handle"
+                              onTouchStart={(e) => handleTouchStart(i, e)}
+                            >
+                              <GripVertical size={18} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               )
             }

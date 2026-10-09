@@ -730,14 +730,14 @@ export async function getPageBaseSize(pageNum) {
   return { width: vp.width, height: vp.height }
 }
 
-export async function renderThumbnail(pageNum) {
+export async function renderThumbnail(pageNum, scale = 0.8) {
   const page     = await getPage(pageNum)
-  const viewport = page.getViewport({ scale: 0.3 })
+  const viewport = page.getViewport({ scale })
   const canvas   = document.createElement('canvas')
-  canvas.width   = viewport.width
-  canvas.height  = viewport.height
+  canvas.width   = Math.floor(viewport.width)
+  canvas.height  = Math.floor(viewport.height)
   await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise
-  return canvas.toDataURL('image/jpeg', 0.7)
+  return canvas.toDataURL('image/jpeg', 0.8)
 }
 
 // ─── Infer font properties from operator list when name resolution fails ──

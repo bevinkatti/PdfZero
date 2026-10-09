@@ -687,19 +687,155 @@
 }
 
 .reorderGrid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(80px,1fr));
-  gap: 8px; max-height: 320px; overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  max-height: 580px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px;
+  scroll-behavior: smooth;
+  border-radius: var(--r-md);
+  border: 1px solid var(--brd);
+  background: var(--bg-canvas);
 }
+
 .reorderCard {
-  position: relative; border: 1px solid var(--brd); border-radius: var(--r-sm);
-  overflow: hidden; cursor: grab; background: white;
-  transition: border-color var(--t-fast);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--brd-2);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  cursor: grab;
+  background: var(--bg-card);
+  transition: border-color var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
+  user-select: none;
 }
-.reorderCard:hover { border-color: var(--accent); }
-.reorderCard:active { cursor: grabbing; }
-.reorderHandle { position: absolute; top: 3px; left: 3px; color: var(--tx-4); }
-.reorderThumb { width: 100%; display: block; aspect-ratio: 0.71; object-fit: cover; }
-.reorderNum { position: absolute; bottom: 3px; right: 4px; font-size: 9px; background: rgba(0,0,0,0.5); color: white; padding: 1px 4px; border-radius: 3px; }
+
+.reorderCard:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+}
+
+.reorderCard:active {
+  cursor: grabbing;
+}
+
+.reorderCardDragging {
+  opacity: 0.45;
+  transform: scale(0.97);
+  border-color: var(--tx-4);
+}
+
+.reorderCardOver {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.reorderThumbWrap {
+  width: 100%;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  min-height: 140px;
+}
+
+.reorderThumb {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.reorderFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: var(--bg-card);
+  border-top: 1px solid var(--brd);
+  gap: 8px;
+}
+
+.reorderPageInfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.reorderNum {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx-1);
+  white-space: nowrap;
+}
+
+.reorderOrig {
+  font-size: 11px;
+  color: var(--tx-3);
+  font-weight: normal;
+  white-space: nowrap;
+}
+
+.reorderActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.reorderHandle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  color: var(--tx-2);
+  cursor: grab;
+  touch-action: none;
+  transition: color var(--t-fast), background var(--t-fast);
+}
+
+.reorderHandle:hover {
+  color: var(--tx-1);
+  background: var(--bg-hover);
+}
+
+.reorderHandle:active {
+  cursor: grabbing;
+  color: var(--accent);
+}
+
+.moveBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--tx-2);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+
+.moveBtn:hover:not(:disabled) {
+  color: var(--tx-1);
+  background: var(--bg-hover);
+  border-color: var(--brd-2);
+}
+
+.moveBtn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
 
 .loadingRow { display: flex; align-items: center; gap: 8px; color: var(--tx-2); font-size: 13px; padding: 16px 0; }
 .fileIndex { width: 18px; height: 18px; border-radius: 50%; background: var(--bg-hover); color: var(--tx-3); font-size: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -754,5 +890,63 @@
 
   .inlineControlRow {
     grid-template-columns: 1fr;
+  }
+
+  .reorderGrid {
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: none;
+    gap: 16px;
+    max-height: 65vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    padding: 4px 0;
+    border: none;
+    background: transparent;
+  }
+
+  .reorderCard {
+    width: 100%;
+    max-width: 100%;
+    flex-shrink: 0;
+    transform: none !important;
+  }
+
+  .reorderCard:hover {
+    transform: none;
+  }
+
+  .reorderThumbWrap {
+    min-height: 180px;
+  }
+
+  .reorderThumb {
+    max-height: 480px;
+  }
+
+  .reorderFooter {
+    padding: 10px 14px;
+  }
+
+  .reorderPageInfo .reorderNum {
+    font-size: 14px;
+  }
+
+  .reorderHandle {
+    width: 40px;
+    height: 40px;
+    background: var(--bg-hover);
+    color: var(--tx-1);
+    border: 1px solid var(--brd-2);
+  }
+
+  .moveBtn {
+    width: 38px;
+    height: 38px;
+    background: var(--bg-hover);
+    color: var(--tx-1);
+    border: 1px solid var(--brd-2);
   }
 }
