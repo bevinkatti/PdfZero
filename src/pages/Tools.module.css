@@ -906,7 +906,7 @@
     max-height: 60vh;
     overflow-y: auto;
     overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     padding: 4px;
     border: none;
     background: transparent;

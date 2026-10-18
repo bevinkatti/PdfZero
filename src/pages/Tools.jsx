@@ -850,10 +850,67 @@ function ReorderTool() {
 
   const dragIdx = React.useRef(null)
   const touchDragIdx = React.useRef(null)
+  const touchOverIdxRef = React.useRef(null)
   const gridRef = React.useRef(null)
   const autoScrollRaf = React.useRef(null)
   const pointerCoords = React.useRef(null)
   const isDraggingRef = React.useRef(false)
+  const thumbsLenRef = React.useRef(0)
+
+  React.useEffect(() => {
+    thumbsLenRef.current = thumbs.length
+  }, [thumbs.length])
+
+  const updateTouchOverIdx = (idx) => {
+    if (touchOverIdxRef.current !== idx) {
+      touchOverIdxRef.current = idx
+      setTouchOverIdx(idx)
+    }
+  }
+
+  // First ancestor that can actually scroll. On mobile this is the page
+  // column (.content); the thumbnail list sits inside it and often runs
+  // past the bottom of the screen.
+  const getScrollParent = (el) => {
+    let node = el?.parentElement
+    while (node && node !== document.body && node !== document.documentElement) {
+      const { overflowY } = window.getComputedStyle(node)
+      if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight + 1) {
+        return node
+      }
+      node = node.parentElement
+    }
+    return document.scrollingElement || document.documentElement
+  }
+
+  // The slice of the thumbnail list that is actually on screen: clipped by
+  // the list itself, the page scroller, and the visual viewport (which
+  // shrinks when mobile browser toolbars are showing).
+  const getVisibleBand = () => {
+    const container = gridRef.current
+    if (!container) return null
+    const rect = container.getBoundingClientRect()
+    const parentRect = getScrollParent(container).getBoundingClientRect()
+    const vv = window.visualViewport
+    const viewTop = vv ? vv.offsetTop : 0
+    const viewBottom = vv ? vv.offsetTop + vv.height : window.innerHeight
+    return {
+      top: Math.max(rect.top, parentRect.top, viewTop, 0),
+      bottom: Math.min(rect.bottom, parentRect.bottom, viewBottom),
+    }
+  }
+
+  // Apply as much of `delta` as the element can absorb. Returns the unused remainder.
+  const scrollByDelta = (el, delta) => {
+    if (!el || !delta) return delta
+    const max = el.scrollHeight - el.clientHeight
+    if (max <= 0) return delta
+    const before = el.scrollTop
+    const next = Math.max(0, Math.min(max, before + delta))
+    if (next === before) return delta
+    el.scrollTop = next
+    return delta - (next - before)
+  }
 
   const startAutoScroll = () => {
     isDraggingRef.current = true
@@ -866,30 +923,43 @@ function ReorderTool() {
       const container = gridRef.current
 
       if (coords && container) {
-        const rect = container.getBoundingClientRect()
-        const threshold = 70 // px zone near top and bottom edge
+        const band = getVisibleBand()
+        const threshold = 80 // px zone near the visible top and bottom edge
+        const maxSpeed = 18
 
-        // Check top edge of container
-        if (coords.y >= rect.top - 20 && coords.y <= rect.top + threshold) {
-          const distance = Math.max(0, coords.y - rect.top)
-          const speed = Math.max(3, Math.round((1 - distance / threshold) * 15))
-          container.scrollTop -= speed
-        }
-        // Check bottom edge of container
-        else if (coords.y >= rect.bottom - threshold && coords.y <= rect.bottom + 20) {
-          const distance = Math.max(0, rect.bottom - coords.y)
-          const speed = Math.max(3, Math.round((1 - distance / threshold) * 15))
-          container.scrollTop += speed
-        }
+        if (band && band.bottom > band.top) {
+          let delta = 0
+          if (coords.y <= band.top + threshold) {
+            delta = coords.y <= band.top
+              ? -maxSpeed
+              : -Math.max(3, Math.round((1 - (coords.y - band.top) / threshold) * maxSpeed))
+          } else if (coords.y >= band.bottom - threshold) {
+            delta = coords.y >= band.bottom
+              ? maxSpeed
+              : Math.max(3, Math.round((1 - (band.bottom - coords.y) / threshold) * maxSpeed))
+          }
 
-        // On mobile touch drag: dynamically update touchOverIdx as cards scroll under finger
-        if (touchDragIdx.current !== null) {
-          const elem = document.elementFromPoint(coords.x, coords.y)
-          const targetCard = elem?.closest?.('[data-reorder-index]')
-          if (targetCard) {
-            const targetIdx = parseInt(targetCard.getAttribute('data-reorder-index'), 10)
-            if (!isNaN(targetIdx)) {
-              setTouchOverIdx(targetIdx)
+          if (delta !== 0) {
+            // Scroll the thumbnail list first. Once it is at its limit, keep
+            // going by scrolling the page so the rest of the list can be reached.
+            const remainder = scrollByDelta(container, delta)
+            if (remainder !== 0) scrollByDelta(getScrollParent(container), remainder)
+          }
+
+          // On mobile touch drag: update the drop target as cards move under the finger
+          if (touchDragIdx.current !== null) {
+            const lastIdx = Math.max(0, thumbsLenRef.current - 1)
+            if (coords.y <= band.top) {
+              updateTouchOverIdx(0)
+            } else if (coords.y >= band.bottom) {
+              updateTouchOverIdx(lastIdx)
+            } else {
+              const elem = document.elementFromPoint(coords.x, coords.y)
+              const targetCard = elem?.closest?.('[data-reorder-index]')
+              if (targetCard) {
+                const targetIdx = parseInt(targetCard.getAttribute('data-reorder-index'), 10)
+                if (!isNaN(targetIdx)) updateTouchOverIdx(targetIdx)
+              }
             }
           }
         }
@@ -1003,8 +1073,8 @@ function ReorderTool() {
 
   const handleTouchStart = (i, e) => {
     touchDragIdx.current = i
+    updateTouchOverIdx(i)
     setTouchActiveIdx(i)
-    setTouchOverIdx(i)
     const touch = e.touches[0]
     if (touch) {
       pointerCoords.current = { x: touch.clientX, y: touch.clientY }
@@ -1012,10 +1082,9 @@ function ReorderTool() {
     startAutoScroll()
   }
 
-  // Non-passive touchmove listener so e.preventDefault() is honored during drag without browser gesture conflicts
+  // Window-level touchmove & touchend listener active only during touch drag
   React.useEffect(() => {
-    const container = gridRef.current
-    if (!container) return
+    if (touchActiveIdx === null) return
 
     const onTouchMove = (e) => {
       if (touchDragIdx.current === null) return
@@ -1024,26 +1093,53 @@ function ReorderTool() {
       if (!touch) return
       pointerCoords.current = { x: touch.clientX, y: touch.clientY }
 
+      const band = getVisibleBand()
+      const lastIdx = Math.max(0, thumbsLenRef.current - 1)
+      if (band) {
+        if (touch.clientY <= band.top) {
+          updateTouchOverIdx(0)
+          return
+        }
+        if (touch.clientY >= band.bottom) {
+          updateTouchOverIdx(lastIdx)
+          return
+        }
+      }
+
       const elem = document.elementFromPoint(touch.clientX, touch.clientY)
       const targetCard = elem?.closest?.('[data-reorder-index]')
       if (targetCard) {
         const targetIdx = parseInt(targetCard.getAttribute('data-reorder-index'), 10)
-        if (!isNaN(targetIdx) && targetIdx !== touchOverIdx) {
-          setTouchOverIdx(targetIdx)
+        if (!isNaN(targetIdx)) {
+          updateTouchOverIdx(targetIdx)
         }
       }
     }
 
-    container.addEventListener('touchmove', onTouchMove, { passive: false })
-    return () => container.removeEventListener('touchmove', onTouchMove)
-  }, [touchOverIdx])
+    const onTouchEnd = () => {
+      handleTouchEnd()
+    }
+
+    window.addEventListener('touchmove', onTouchMove, { passive: false })
+    window.addEventListener('touchend', onTouchEnd)
+    window.addEventListener('touchcancel', onTouchEnd)
+
+    return () => {
+      window.removeEventListener('touchmove', onTouchMove)
+      window.removeEventListener('touchend', onTouchEnd)
+      window.removeEventListener('touchcancel', onTouchEnd)
+    }
+  }, [touchActiveIdx])
 
   const handleTouchEnd = () => {
     stopAutoScroll()
-    if (touchDragIdx.current !== null && touchOverIdx !== null && touchDragIdx.current !== touchOverIdx) {
-      movePage(touchDragIdx.current, touchOverIdx)
+    const fromIdx = touchDragIdx.current
+    const toIdx = touchOverIdxRef.current
+    if (fromIdx !== null && toIdx !== null && fromIdx !== toIdx) {
+      movePage(fromIdx, toIdx)
     }
     touchDragIdx.current = null
+    touchOverIdxRef.current = null
     setTouchActiveIdx(null)
     setTouchOverIdx(null)
   }
@@ -1080,8 +1176,6 @@ function ReorderTool() {
                   className={styles.reorderGrid}
                   onDragOver={handleContainerDragOver}
                   onDragLeave={() => setDragOverIdx(null)}
-                  onTouchEnd={handleTouchEnd}
-                  onTouchCancel={handleTouchEnd}
                 >
                   {thumbs.map((t, i) => {
                     const isDragging = draggingIdx === i || touchActiveIdx === i
