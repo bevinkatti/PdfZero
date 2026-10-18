@@ -851,6 +851,83 @@ function ReorderTool() {
   const dragIdx = React.useRef(null)
   const touchDragIdx = React.useRef(null)
   const gridRef = React.useRef(null)
+  const autoScrollRaf = React.useRef(null)
+  const pointerCoords = React.useRef(null)
+  const isDraggingRef = React.useRef(false)
+
+  const startAutoScroll = () => {
+    isDraggingRef.current = true
+    if (autoScrollRaf.current) return
+
+    const scrollStep = () => {
+      if (!isDraggingRef.current) return
+
+      const coords = pointerCoords.current
+      const container = gridRef.current
+
+      if (coords && container) {
+        const rect = container.getBoundingClientRect()
+        const threshold = 70 // px zone near top and bottom edge
+
+        // Check top edge of container
+        if (coords.y >= rect.top - 20 && coords.y <= rect.top + threshold) {
+          const distance = Math.max(0, coords.y - rect.top)
+          const speed = Math.max(3, Math.round((1 - distance / threshold) * 15))
+          container.scrollTop -= speed
+        }
+        // Check bottom edge of container
+        else if (coords.y >= rect.bottom - threshold && coords.y <= rect.bottom + 20) {
+          const distance = Math.max(0, rect.bottom - coords.y)
+          const speed = Math.max(3, Math.round((1 - distance / threshold) * 15))
+          container.scrollTop += speed
+        }
+
+        // On mobile touch drag: dynamically update touchOverIdx as cards scroll under finger
+        if (touchDragIdx.current !== null) {
+          const elem = document.elementFromPoint(coords.x, coords.y)
+          const targetCard = elem?.closest?.('[data-reorder-index]')
+          if (targetCard) {
+            const targetIdx = parseInt(targetCard.getAttribute('data-reorder-index'), 10)
+            if (!isNaN(targetIdx)) {
+              setTouchOverIdx(targetIdx)
+            }
+          }
+        }
+      }
+
+      autoScrollRaf.current = requestAnimationFrame(scrollStep)
+    }
+
+    autoScrollRaf.current = requestAnimationFrame(scrollStep)
+  }
+
+  const stopAutoScroll = () => {
+    isDraggingRef.current = false
+    if (autoScrollRaf.current) {
+      cancelAnimationFrame(autoScrollRaf.current)
+      autoScrollRaf.current = null
+    }
+    pointerCoords.current = null
+  }
+
+  React.useEffect(() => {
+    return () => {
+      isDraggingRef.current = false
+      if (autoScrollRaf.current) {
+        cancelAnimationFrame(autoScrollRaf.current)
+      }
+    }
+  }, [])
+
+  // Continuously track mouse coordinates during desktop drag even across boundaries
+  React.useEffect(() => {
+    if (draggingIdx === null) return
+    const onWindowDragOver = (e) => {
+      pointerCoords.current = { x: e.clientX, y: e.clientY }
+    }
+    window.addEventListener('dragover', onWindowDragOver)
+    return () => window.removeEventListener('dragover', onWindowDragOver)
+  }, [draggingIdx])
 
   const onFile = async (f) => {
     setFile(f)
@@ -887,23 +964,35 @@ function ReorderTool() {
     })
   }
 
-  const handleDragStart = (i) => {
+  const handleDragStart = (i, e) => {
     dragIdx.current = i
     setDraggingIdx(i)
+    if (e) {
+      pointerCoords.current = { x: e.clientX, y: e.clientY }
+    }
+    startAutoScroll()
   }
 
   const handleDragOver = (e, i) => {
     e.preventDefault()
+    pointerCoords.current = { x: e.clientX, y: e.clientY }
     if (dragOverIdx !== i) setDragOverIdx(i)
   }
 
+  const handleContainerDragOver = (e) => {
+    e.preventDefault()
+    pointerCoords.current = { x: e.clientX, y: e.clientY }
+  }
+
   const handleDragEnd = () => {
+    stopAutoScroll()
     dragIdx.current = null
     setDraggingIdx(null)
     setDragOverIdx(null)
   }
 
   const handleDrop = (i) => {
+    stopAutoScroll()
     if (dragIdx.current !== null && dragIdx.current !== i) {
       movePage(dragIdx.current, i)
     }
@@ -916,36 +1005,41 @@ function ReorderTool() {
     touchDragIdx.current = i
     setTouchActiveIdx(i)
     setTouchOverIdx(i)
-  }
-
-  const handleTouchMove = (e) => {
-    if (touchDragIdx.current === null) return
     const touch = e.touches[0]
-    if (!touch) return
-
-    // Smooth auto-scroll when dragging near edges of the scrollable container
-    const container = gridRef.current
-    if (container) {
-      const rect = container.getBoundingClientRect()
-      const threshold = 50
-      if (touch.clientY < rect.top + threshold) {
-        container.scrollTop -= 10
-      } else if (touch.clientY > rect.bottom - threshold) {
-        container.scrollTop += 10
-      }
+    if (touch) {
+      pointerCoords.current = { x: touch.clientX, y: touch.clientY }
     }
-
-    const elem = document.elementFromPoint(touch.clientX, touch.clientY)
-    const targetCard = elem?.closest?.('[data-reorder-index]')
-    if (targetCard) {
-      const targetIdx = parseInt(targetCard.getAttribute('data-reorder-index'), 10)
-      if (!isNaN(targetIdx) && targetIdx !== touchOverIdx) {
-        setTouchOverIdx(targetIdx)
-      }
-    }
+    startAutoScroll()
   }
+
+  // Non-passive touchmove listener so e.preventDefault() is honored during drag without browser gesture conflicts
+  React.useEffect(() => {
+    const container = gridRef.current
+    if (!container) return
+
+    const onTouchMove = (e) => {
+      if (touchDragIdx.current === null) return
+      if (e.cancelable) e.preventDefault()
+      const touch = e.touches[0]
+      if (!touch) return
+      pointerCoords.current = { x: touch.clientX, y: touch.clientY }
+
+      const elem = document.elementFromPoint(touch.clientX, touch.clientY)
+      const targetCard = elem?.closest?.('[data-reorder-index]')
+      if (targetCard) {
+        const targetIdx = parseInt(targetCard.getAttribute('data-reorder-index'), 10)
+        if (!isNaN(targetIdx) && targetIdx !== touchOverIdx) {
+          setTouchOverIdx(targetIdx)
+        }
+      }
+    }
+
+    container.addEventListener('touchmove', onTouchMove, { passive: false })
+    return () => container.removeEventListener('touchmove', onTouchMove)
+  }, [touchOverIdx])
 
   const handleTouchEnd = () => {
+    stopAutoScroll()
     if (touchDragIdx.current !== null && touchOverIdx !== null && touchDragIdx.current !== touchOverIdx) {
       movePage(touchDragIdx.current, touchOverIdx)
     }
@@ -976,7 +1070,7 @@ function ReorderTool() {
             <div className={styles.fileChip}>
               <FileText size={14}/>
               <span className={styles.fileName}>{file.name}</span>
-              <button className={styles.removeBtn} onClick={() => { setFile(null); setThumbs([]); setOrder([]) }}><X size={12}/></button>
+              <button className={styles.removeBtn} onClick={() => { stopAutoScroll(); setFile(null); setThumbs([]); setOrder([]) }}><X size={12}/></button>
             </div>
             {loading
               ? <div className={styles.loadingRow}><Loader2 size={18} className={styles.spin}/> Loading pages...</div>
@@ -984,8 +1078,8 @@ function ReorderTool() {
                 <div
                   ref={gridRef}
                   className={styles.reorderGrid}
+                  onDragOver={handleContainerDragOver}
                   onDragLeave={() => setDragOverIdx(null)}
-                  onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
                   onTouchCancel={handleTouchEnd}
                 >
@@ -998,13 +1092,14 @@ function ReorderTool() {
                         data-reorder-index={i}
                         className={`${styles.reorderCard} ${isDragging ? styles.reorderCardDragging : ''} ${isOver ? styles.reorderCardOver : ''}`}
                         draggable
-                        onDragStart={() => handleDragStart(i)}
+                        onContextMenu={(e) => e.preventDefault()}
+                        onDragStart={(e) => handleDragStart(i, e)}
                         onDragOver={(e) => handleDragOver(e, i)}
                         onDragEnd={handleDragEnd}
                         onDrop={() => handleDrop(i)}
                       >
                         <div className={styles.reorderThumbWrap}>
-                          <img src={t.dataUrl} alt={`Page ${t.page}`} className={styles.reorderThumb} />
+                          <img src={t.dataUrl} alt={`Page ${t.page}`} className={styles.reorderThumb} draggable={false} />
                         </div>
                         <div className={styles.reorderFooter}>
                           <div className={styles.reorderPageInfo}>
