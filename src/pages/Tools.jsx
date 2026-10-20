@@ -6,7 +6,7 @@ import {
   Scissors, Merge, FileDown, RotateCcw, ScanLine, Lock,
   Unlock, Droplets, EyeOff, Edit3, FileSearch, Layers,
   ChevronRight, Upload, FileText, X, Loader2, RotateCw, Image as ImageIcon,
-  GripVertical, Check, ArrowLeft, Grid2X2
+  GripVertical, Check, ArrowLeft, Grid2X2, ChevronUp, ChevronDown
 } from 'lucide-react'
 import Navbar from '../components/layout/Navbar.jsx'
 import {
@@ -843,7 +843,161 @@ function ReorderTool() {
   const [order, setOrder]   = useState([])
   const [loading, setLoading] = useState(false)
   const [busy, setBusy]     = useState(false)
+  const [dragOverIdx, setDragOverIdx] = useState(null)
+  const [draggingIdx, setDraggingIdx] = useState(null)
+  const [touchActiveIdx, setTouchActiveIdx] = useState(null)
+  const [touchOverIdx, setTouchOverIdx] = useState(null)
+
   const dragIdx = React.useRef(null)
+  const touchDragIdx = React.useRef(null)
+  const touchOverIdxRef = React.useRef(null)
+  const gridRef = React.useRef(null)
+  const autoScrollRaf = React.useRef(null)
+  const pointerCoords = React.useRef(null)
+  const isDraggingRef = React.useRef(false)
+  const thumbsLenRef = React.useRef(0)
+
+  React.useEffect(() => {
+    thumbsLenRef.current = thumbs.length
+  }, [thumbs.length])
+
+  const updateTouchOverIdx = (idx) => {
+    if (touchOverIdxRef.current !== idx) {
+      touchOverIdxRef.current = idx
+      setTouchOverIdx(idx)
+    }
+  }
+
+  // First ancestor that can actually scroll. On mobile this is the page
+  // column (.content); the thumbnail list sits inside it and often runs
+  // past the bottom of the screen.
+  const getScrollParent = (el) => {
+    let node = el?.parentElement
+    while (node && node !== document.body && node !== document.documentElement) {
+      const { overflowY } = window.getComputedStyle(node)
+      if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight + 1) {
+        return node
+      }
+      node = node.parentElement
+    }
+    return document.scrollingElement || document.documentElement
+  }
+
+  // The slice of the thumbnail list that is actually on screen: clipped by
+  // the list itself, the page scroller, and the visual viewport (which
+  // shrinks when mobile browser toolbars are showing).
+  const getVisibleBand = () => {
+    const container = gridRef.current
+    if (!container) return null
+    const rect = container.getBoundingClientRect()
+    const parentRect = getScrollParent(container).getBoundingClientRect()
+    const vv = window.visualViewport
+    const viewTop = vv ? vv.offsetTop : 0
+    const viewBottom = vv ? vv.offsetTop + vv.height : window.innerHeight
+    return {
+      top: Math.max(rect.top, parentRect.top, viewTop, 0),
+      bottom: Math.min(rect.bottom, parentRect.bottom, viewBottom),
+    }
+  }
+
+  // Apply as much of `delta` as the element can absorb. Returns the unused remainder.
+  const scrollByDelta = (el, delta) => {
+    if (!el || !delta) return delta
+    const max = el.scrollHeight - el.clientHeight
+    if (max <= 0) return delta
+    const before = el.scrollTop
+    const next = Math.max(0, Math.min(max, before + delta))
+    if (next === before) return delta
+    el.scrollTop = next
+    return delta - (next - before)
+  }
+
+  const startAutoScroll = () => {
+    isDraggingRef.current = true
+    if (autoScrollRaf.current) return
+
+    const scrollStep = () => {
+      if (!isDraggingRef.current) return
+
+      const coords = pointerCoords.current
+      const container = gridRef.current
+
+      if (coords && container) {
+        const band = getVisibleBand()
+        const threshold = 80 // px zone near the visible top and bottom edge
+        const maxSpeed = 18
+
+        if (band && band.bottom > band.top) {
+          let delta = 0
+          if (coords.y <= band.top + threshold) {
+            delta = coords.y <= band.top
+              ? -maxSpeed
+              : -Math.max(3, Math.round((1 - (coords.y - band.top) / threshold) * maxSpeed))
+          } else if (coords.y >= band.bottom - threshold) {
+            delta = coords.y >= band.bottom
+              ? maxSpeed
+              : Math.max(3, Math.round((1 - (band.bottom - coords.y) / threshold) * maxSpeed))
+          }
+
+          if (delta !== 0) {
+            // Scroll the thumbnail list first. Once it is at its limit, keep
+            // going by scrolling the page so the rest of the list can be reached.
+            const remainder = scrollByDelta(container, delta)
+            if (remainder !== 0) scrollByDelta(getScrollParent(container), remainder)
+          }
+
+          // On mobile touch drag: update the drop target as cards move under the finger
+          if (touchDragIdx.current !== null) {
+            const lastIdx = Math.max(0, thumbsLenRef.current - 1)
+            if (coords.y <= band.top) {
+              updateTouchOverIdx(0)
+            } else if (coords.y >= band.bottom) {
+              updateTouchOverIdx(lastIdx)
+            } else {
+              const elem = document.elementFromPoint(coords.x, coords.y)
+              const targetCard = elem?.closest?.('[data-reorder-index]')
+              if (targetCard) {
+                const targetIdx = parseInt(targetCard.getAttribute('data-reorder-index'), 10)
+                if (!isNaN(targetIdx)) updateTouchOverIdx(targetIdx)
+              }
+            }
+          }
+        }
+      }
+
+      autoScrollRaf.current = requestAnimationFrame(scrollStep)
+    }
+
+    autoScrollRaf.current = requestAnimationFrame(scrollStep)
+  }
+
+  const stopAutoScroll = () => {
+    isDraggingRef.current = false
+    if (autoScrollRaf.current) {
+      cancelAnimationFrame(autoScrollRaf.current)
+      autoScrollRaf.current = null
+    }
+    pointerCoords.current = null
+  }
+
+  React.useEffect(() => {
+    return () => {
+      isDraggingRef.current = false
+      if (autoScrollRaf.current) {
+        cancelAnimationFrame(autoScrollRaf.current)
+      }
+    }
+  }, [])
+
+  // Continuously track mouse coordinates during desktop drag even across boundaries
+  React.useEffect(() => {
+    if (draggingIdx === null) return
+    const onWindowDragOver = (e) => {
+      pointerCoords.current = { x: e.clientX, y: e.clientY }
+    }
+    window.addEventListener('dragover', onWindowDragOver)
+    return () => window.removeEventListener('dragover', onWindowDragOver)
+  }, [draggingIdx])
 
   const onFile = async (f) => {
     setFile(f)
@@ -864,19 +1018,130 @@ function ReorderTool() {
     setLoading(false)
   }
 
-  const handleDragStart = (i) => { dragIdx.current = i }
-  const handleDragOver  = (e) => e.preventDefault()
-  const handleDrop      = (i) => {
-    if (dragIdx.current === null || dragIdx.current === i) return
-    const newOrder = [...order]
-    const [moved]  = newOrder.splice(dragIdx.current, 1)
-    newOrder.splice(i, 0, moved)
-    setOrder(newOrder)
-    const newThumbs = [...thumbs]
-    const [mt] = newThumbs.splice(dragIdx.current, 1)
-    newThumbs.splice(i, 0, mt)
-    setThumbs(newThumbs)
+  const movePage = (fromIndex, toIndex) => {
+    if (toIndex < 0 || toIndex >= thumbs.length || fromIndex === toIndex) return
+    setOrder(prev => {
+      const next = [...prev]
+      const [moved] = next.splice(fromIndex, 1)
+      next.splice(toIndex, 0, moved)
+      return next
+    })
+    setThumbs(prev => {
+      const next = [...prev]
+      const [moved] = next.splice(fromIndex, 1)
+      next.splice(toIndex, 0, moved)
+      return next
+    })
+  }
+
+  const handleDragStart = (i, e) => {
+    dragIdx.current = i
+    setDraggingIdx(i)
+    if (e) {
+      pointerCoords.current = { x: e.clientX, y: e.clientY }
+    }
+    startAutoScroll()
+  }
+
+  const handleDragOver = (e, i) => {
+    e.preventDefault()
+    pointerCoords.current = { x: e.clientX, y: e.clientY }
+    if (dragOverIdx !== i) setDragOverIdx(i)
+  }
+
+  const handleContainerDragOver = (e) => {
+    e.preventDefault()
+    pointerCoords.current = { x: e.clientX, y: e.clientY }
+  }
+
+  const handleDragEnd = () => {
+    stopAutoScroll()
     dragIdx.current = null
+    setDraggingIdx(null)
+    setDragOverIdx(null)
+  }
+
+  const handleDrop = (i) => {
+    stopAutoScroll()
+    if (dragIdx.current !== null && dragIdx.current !== i) {
+      movePage(dragIdx.current, i)
+    }
+    dragIdx.current = null
+    setDraggingIdx(null)
+    setDragOverIdx(null)
+  }
+
+  const handleTouchStart = (i, e) => {
+    touchDragIdx.current = i
+    updateTouchOverIdx(i)
+    setTouchActiveIdx(i)
+    const touch = e.touches[0]
+    if (touch) {
+      pointerCoords.current = { x: touch.clientX, y: touch.clientY }
+    }
+    startAutoScroll()
+  }
+
+  // Window-level touchmove & touchend listener active only during touch drag
+  React.useEffect(() => {
+    if (touchActiveIdx === null) return
+
+    const onTouchMove = (e) => {
+      if (touchDragIdx.current === null) return
+      if (e.cancelable) e.preventDefault()
+      const touch = e.touches[0]
+      if (!touch) return
+      pointerCoords.current = { x: touch.clientX, y: touch.clientY }
+
+      const band = getVisibleBand()
+      const lastIdx = Math.max(0, thumbsLenRef.current - 1)
+      if (band) {
+        if (touch.clientY <= band.top) {
+          updateTouchOverIdx(0)
+          return
+        }
+        if (touch.clientY >= band.bottom) {
+          updateTouchOverIdx(lastIdx)
+          return
+        }
+      }
+
+      const elem = document.elementFromPoint(touch.clientX, touch.clientY)
+      const targetCard = elem?.closest?.('[data-reorder-index]')
+      if (targetCard) {
+        const targetIdx = parseInt(targetCard.getAttribute('data-reorder-index'), 10)
+        if (!isNaN(targetIdx)) {
+          updateTouchOverIdx(targetIdx)
+        }
+      }
+    }
+
+    const onTouchEnd = () => {
+      handleTouchEnd()
+    }
+
+    window.addEventListener('touchmove', onTouchMove, { passive: false })
+    window.addEventListener('touchend', onTouchEnd)
+    window.addEventListener('touchcancel', onTouchEnd)
+
+    return () => {
+      window.removeEventListener('touchmove', onTouchMove)
+      window.removeEventListener('touchend', onTouchEnd)
+      window.removeEventListener('touchcancel', onTouchEnd)
+    }
+  }, [touchActiveIdx])
+
+  const handleTouchEnd = () => {
+    stopAutoScroll()
+    const fromIdx = touchDragIdx.current
+    const toIdx = touchOverIdxRef.current
+    if (fromIdx !== null && toIdx !== null && fromIdx !== toIdx) {
+      movePage(fromIdx, toIdx)
+    }
+    touchDragIdx.current = null
+    touchOverIdxRef.current = null
+    setTouchActiveIdx(null)
+    setTouchOverIdx(null)
   }
 
   const handleSave = async () => {
@@ -893,7 +1158,7 @@ function ReorderTool() {
   }
 
   return (
-    <ToolShell title="Reorder Pages" desc="Drag and drop pages into the order you want, then download.">
+    <ToolShell title="Reorder Pages" desc="Drag and drop pages into the order you want, then download." wide>
       {!file
         ? <FileDropper file={null} onFile={onFile} onClear={() => {}} />
         : (
@@ -901,26 +1166,76 @@ function ReorderTool() {
             <div className={styles.fileChip}>
               <FileText size={14}/>
               <span className={styles.fileName}>{file.name}</span>
-              <button className={styles.removeBtn} onClick={() => { setFile(null); setThumbs([]); setOrder([]) }}><X size={12}/></button>
+              <button className={styles.removeBtn} onClick={() => { stopAutoScroll(); setFile(null); setThumbs([]); setOrder([]) }}><X size={12}/></button>
             </div>
             {loading
               ? <div className={styles.loadingRow}><Loader2 size={18} className={styles.spin}/> Loading pages...</div>
               : (
-                <div className={styles.reorderGrid}>
-                  {thumbs.map((t, i) => (
-                    <div
-                      key={t.page}
-                      className={styles.reorderCard}
-                      draggable
-                      onDragStart={() => handleDragStart(i)}
-                      onDragOver={handleDragOver}
-                      onDrop={() => handleDrop(i)}
-                    >
-                      <div className={styles.reorderHandle}><GripVertical size={12}/></div>
-                      <img src={t.dataUrl} alt={`Page ${t.page}`} className={styles.reorderThumb} />
-                      <span className={styles.reorderNum}>{i+1}</span>
-                    </div>
-                  ))}
+                <div
+                  ref={gridRef}
+                  className={styles.reorderGrid}
+                  onDragOver={handleContainerDragOver}
+                  onDragLeave={() => setDragOverIdx(null)}
+                >
+                  {thumbs.map((t, i) => {
+                    const isDragging = draggingIdx === i || touchActiveIdx === i
+                    const isOver = (dragOverIdx === i && draggingIdx !== i) || (touchOverIdx === i && touchActiveIdx !== null && touchActiveIdx !== i)
+                    return (
+                      <div
+                        key={t.page}
+                        data-reorder-index={i}
+                        className={`${styles.reorderCard} ${isDragging ? styles.reorderCardDragging : ''} ${isOver ? styles.reorderCardOver : ''}`}
+                        draggable
+                        onContextMenu={(e) => e.preventDefault()}
+                        onDragStart={(e) => handleDragStart(i, e)}
+                        onDragOver={(e) => handleDragOver(e, i)}
+                        onDragEnd={handleDragEnd}
+                        onDrop={() => handleDrop(i)}
+                      >
+                        <div className={styles.reorderThumbWrap}>
+                          <img src={t.dataUrl} alt={`Page ${t.page}`} className={styles.reorderThumb} draggable={false} />
+                        </div>
+                        <div className={styles.reorderFooter}>
+                          <div className={styles.reorderPageInfo}>
+                            <span className={styles.reorderNum}>Page {i + 1}</span>
+                            {t.page !== i + 1 && (
+                              <span className={styles.reorderOrig}>({t.page})</span>
+                            )}
+                          </div>
+                          <div className={styles.reorderActions}>
+                            <button
+                              type="button"
+                              className={styles.moveBtn}
+                              onClick={(e) => { e.stopPropagation(); movePage(i, i - 1) }}
+                              disabled={i === 0}
+                              title="Move earlier"
+                              aria-label={`Move page ${i + 1} earlier`}
+                            >
+                              <ChevronUp size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.moveBtn}
+                              onClick={(e) => { e.stopPropagation(); movePage(i, i + 1) }}
+                              disabled={i === thumbs.length - 1}
+                              title="Move later"
+                              aria-label={`Move page ${i + 1} later`}
+                            >
+                              <ChevronDown size={16} />
+                            </button>
+                            <div
+                              className={styles.reorderHandle}
+                              title="Drag to reorder"
+                              aria-label="Drag handle"
+                              onTouchStart={(e) => handleTouchStart(i, e)}
+                            >
+                              <GripVertical size={18} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               )
             }
