@@ -1,6 +1,6 @@
-![cover](public/demos/cover.png)
+![cover](public/social-preview.svg)
 
-# 📄PDFZero - Free Open-Source PDF Editor. 
+# 📄 PDFZero - Free Open-Source PDF Editor
 
 > Edit PDFs without uploading anywhere. No task limits. No sign-up. Free.
 
@@ -12,22 +12,22 @@
 [![PDF.js](https://img.shields.io/badge/PDF.js-Mozilla-orange)]()
 [![pdf-lib](https://img.shields.io/badge/pdf--lib-core-red)]()
 [![GitHub Stars](https://img.shields.io/github/stars/bevinkatti/pdfzero?style=flat&logo=github&logoColor=white&label=STARS&labelColor=555555&color=white)](https://github.com/bevinkatti/pdfzero)
----  
+
+---
 
 ## Why PDFZero?
 
-Many PDF tools charge monthly, cap file sizes, or limit what you can do on free plans. PDFZero keeps the core workflow simple: edit locally, keep your files on-device, and use the important tools without a paywall.  
+Many PDF tools charge monthly, cap file sizes, or limit what you can do on free plans. PDFZero keeps the core workflow simple: edit locally, keep your files on-device, and use the important tools without a paywall.
 
-## Demo  
-![demo](public/demos/demo.gif)  
-  
+## Demo
+
+![demo](public/demos/demo.gif)
+
 ## 🌐 Try PDFZero Live
 
 🔗 **https://pdfzero-editor.vercel.app**  
-Edit, organize, secure, and optimize PDFs directly in your browser - all FREE while keeping your files on your device.  
-  
+Edit, organize, secure, and optimize PDFs directly in your browser - all free, all local.
 
----  
 ---
 
 | Feature | Other PDF tools | **PDFZero** |
@@ -38,24 +38,26 @@ Edit, organize, secure, and optimize PDFs directly in your browser - all FREE wh
 | File privacy | Files may be uploaded to a server | **100% local** |
 | Offline use | Usually browser or cloud-based | **Works offline** |
 | Open source | Rare | **MIT** |
-| Cost | Many plans charge monthly | **Free** |  
+| Cost | Many plans charge monthly | **Free** |
 
 ---
 
 ## Features
 
 ### Edit
-- **Edit existing PDF text** - click any text block, edit in-place, and auto-detect the original font
+- **Edit existing PDF text** - click any text block, edit in-place, auto-detect the original font
 - Add new text boxes anywhere on the page
 - Change font family, size, color, bold, and italic
-- Add, replace, and remove images (Coming soon)
+- Add, replace, and remove images *(coming soon)*
 
-### Organize
+### Organize  
+- **Multi-page layout** - arrange and export multiple pages in a single print-ready view
 - Merge multiple PDFs with drag-to-reorder
 - Split PDF by page range
 - Reorder pages via drag-and-drop
 - Rotate individual pages
 - Extract specific pages
+
 
 ### Optimize
 - Compress PDF with browser-native object stream compression
@@ -67,8 +69,8 @@ Edit, organize, secure, and optimize PDFs directly in your browser - all FREE wh
 - Redact sensitive content permanently
 - Add text watermarks
 
-### Smart (Coming soon)
-- OCR for scanned and image PDFs with Tesseract.js, running offline
+### Smart *(coming soon)*
+- OCR for scanned and image PDFs via Tesseract.js — runs offline
 - AI font matching to keep text edits visually consistent
 
 ---
@@ -84,7 +86,8 @@ Edit, organize, secure, and optimize PDFs directly in your browser - all FREE wh
 | [Zustand](https://zustand-demo.pmnd.rs/) | State management |
 | [Vite](https://vitejs.dev/) | Build tool |
 
-**Zero backend. Zero tracking. Zero analytics. 100% browser-native.**
+**Zero backend. Zero user tracking. 100% browser-native.**  
+*Vercel Analytics is used for anonymous deployment metrics only — no user data is collected.*
 
 ---
 
@@ -109,12 +112,13 @@ src/
     layout/          # Navbar
     ui/              # DropZone, shared components
   lib/
-    pdfRenderer.js   # PDF.js wrapper - render pages, extract text
-    pdfExporter.js   # pdf-lib wrapper - export, merge, split, etc.
+    pdfRenderer.js   # PDF.js wrapper — render pages, extract text
+    pdfExporter.js   # pdf-lib wrapper — export, merge, split, etc.
   pages/
     Landing.jsx      # Marketing landing page
     Editor.jsx       # Main PDF editor
     Tools.jsx        # Individual tool UIs
+    MultiPageLayout.jsx  # Multi-page layout tool
   store/
     pdfStore.js      # Zustand global state
   styles/
@@ -172,7 +176,7 @@ src/pdf/
     autoFitRepair.ts
 ```
 
-The browser-only implementation can be excellent for simple and moderately complex PDFs. True high-level editing for embedded subset fonts, object removal, kerning-preserving replacement, complex scripts, and image/gradient background reconstruction requires PDFium, MuPDF, or another real PDF content engine.
+The browser-only implementation can be excellent for simple and moderately complex PDFs. True high-fidelity editing for embedded subset fonts, object removal, kerning-preserving replacement, complex scripts, and image/gradient background reconstruction requires PDFium, MuPDF, or another real PDF content engine.
 
 ---
 
@@ -184,20 +188,21 @@ The browser-only implementation can be excellent for simple and moderately compl
 - [x] Annotations (highlight, redact, shapes)
 - [x] Merge, split, compress tools
 - [x] Watermark, rotate, page management
+- [x] Multi-page layout
 - [x] Preserve richer original text-run metadata for export fitting
 - [x] Fit edited text back to the original run width during pdf-lib export
 - [ ] Packaged fallback font registry with width-vector matching
+- [ ] OCR via Tesseract.js (in progress — not yet stable)
 - [ ] Image add/replace/remove
-- [ ] OCR via Tesseract.js with searchable text layer
 - [ ] Visual export diff for edited regions
 - [ ] e-Sign with canvas signature pad
 - [ ] Paragraph grouping and multi-line reflow
 - [ ] PDF to Word/DOCX export
 - [ ] Form filling and flattening
 - [ ] Batch processing
-- [ ] **Advanced** - PDFium/MuPDF object-level text replacement
-- [ ] **Advanced** - Embedded font reuse and kerning-preserving export
-- [ ] **Advanced** - Background reconstruction by rendering pages with target text objects removed
+- [ ] **Advanced** — PDFium/MuPDF object-level text replacement
+- [ ] **Advanced** — Embedded font reuse and kerning-preserving export
+- [ ] **Advanced** — Background reconstruction by rendering pages with target text objects removed
 
 ---
 
@@ -210,12 +215,12 @@ npm install
 npm run dev
 ```
 
-
 ---
 
 ## License
 
-MIT Copyright PDFZero contributors 
-  
-  ---  
+MIT © PDFZero contributors
+
+---
+
 If you find PDFZero useful, consider giving a ⭐.

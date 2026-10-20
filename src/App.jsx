@@ -6,10 +6,12 @@ import Landing from './pages/Landing.jsx'
 import Editor from './pages/Editor.jsx'
 import Tools from './pages/Tools.jsx'
 import MultiPageLayout from './pages/MultiPageLayout.jsx'
+import SEOLanding from './SEOLanding.jsx'
 
 export default function App() {
   return (
     <>
+      <SEOLanding />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/editor" element={<Editor />} />
